@@ -62,25 +62,26 @@ LL_2020 <-  LL_raw_2020 %>%
               "nombre_logements", "nombre_etages", "statut_owner_1", "statut_owner_10", "statut_owner_11",
               "statut_owner_2", "statut_owner_3", "statut_owner_4", "statut_owner_5", "statut_owner_6", "statut_owner_7",
               "statut_owner_8", "statut_owner_9", "superficie", "utilisation_predo", "valeur_immeuble_ant", "valeur_immeuble_courant",
-              "valeur_batiment_courant", "valeur_terrain_courant", "valeur_imposable", "valeur_non_imposable"))
+              "valeur_batiment_courant", "valeur_terrain_courant", "valeur_imposable", "valeur_non_imposable")) %>% 
+  select(-c(date_rapport, genre_construction, info_en_date, statut_owner_8, statut_owner_9))
 
 
 # Exploration ----------------------------------------------------
 
-LL_2019 %>% 
-  group_by(nom1) %>% 
-  summarize(n=n(), logements=sum(nombre_logements)) %>% 
-  View()
+#LL_2019 %>% 
+#  group_by(nom1) %>% 
+#  summarize(n=n(), logements=sum(nombre_logements)) %>% 
+#  View()
 
-LL_2020 %>% 
-  group_by(nom1) %>% 
-  summarize(n=n(), logements=sum(nombre_logements)) %>% 
-  View()
+#LL_2020 %>% 
+#  group_by(nom1) %>% 
+#  summarize(n=n(), logements=sum(nombre_logements)) %>% 
+#  View()
 
-LL_2020 %>% 
-  group_by(adresse_postale) %>% 
-  summarize(n=n(), logements=sum(nombre_logements)) %>% 
-  View()
+#LL_2020 %>% 
+#  group_by(adresse_postale) %>% 
+#  summarize(n=n(), logements=sum(nombre_logements)) %>% 
+#  View()
 
 
 # Set global variables ----------------------------------------------------
@@ -115,7 +116,7 @@ pc_pa <- PA$V3 %>%
 ville <- str_trim(PA$V2, side=c("left")) %>% 
   as_data_frame() %>% 
   as_tibble() %>% 
-  rename(postal_code = value)
+  rename(ville = value)
 
 # Street name
 street_name <- 
@@ -144,7 +145,31 @@ LL_2020_test1 <-
   cbind(., street_prefix) %>%
   cbind(., suite_number) %>%
   cbind(., ville) %>%
-  cbind(., pc_pa)
+  cbind(., pc_pa) 
+
+LL_2020_test1 <- 
+  LL_2020_test1 %>% 
+  as_tibble()
+
+# If condition for owner/renter -------------------------------------------------------------
+
+LL_2020_test2 <- 
+  LL_2020_test1 %>% 
+  mutate(owner = str_detect(LL_2020_test1$adresse, LL_2020_test1$street_name)) %>% 
+  mutate(number_rental_units = ifelse(owner == TRUE, nombre_logements-1, nombre_logements))
+
+
+# Download UEF for geometry -------------------------------------------------------------
+
+uef <-
+  read_sf("data/uniteevaluationfonciere/uniteevaluationfonciere.shp") %>%
+  st_transform(32618) %>%
+  filter(!is.na(NOMBRE_LOG)) %>%
+  as_tibble() %>%
+  distinct(ID_UEV, .keep_all = TRUE) %>%
+  st_as_sf()
+
+
 
 # Save output -------------------------------------------------------------
 
