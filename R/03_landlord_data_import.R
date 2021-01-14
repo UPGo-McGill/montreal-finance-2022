@@ -73,10 +73,12 @@ LL_2020 <-  LL_raw_2020 %>%
 #  summarize(n=n(), logements=sum(nombre_logements)) %>% 
 #  View()
 
-#LL_2020 %>% 
-#  group_by(nom1) %>% 
-#  summarize(n=n(), logements=sum(nombre_logements)) %>% 
-#  View()
+LL_2020_test2 %>% 
+  group_by(nom1) %>% 
+  summarize(n=n(), logements=sum(nombre_logements)) %>% 
+  group_by(adresse_postale) %>% 
+  summarize(n1=sum(n), logements1=sum(logements)) %>% 
+  View()
 
 #LL_2020 %>% 
 #  group_by(adresse_postale) %>% 
@@ -101,22 +103,22 @@ PA2 <- PA1 %>%
 
 # Rebuild address
 # Civid number
-civic_number <- 
-  PA1$V1 %>% 
-  as_data_frame() %>% 
-  as_tibble()
+#civic_number <- 
+#  PA1$V1 %>% 
+#  as.data.frame() %>% 
+#  as_tibble()
 
 # Postal code
-pc_pa <- PA$V3 %>% 
-  as_data_frame() %>% 
-  as_tibble() %>% 
-  rename(postal_code = value)
+#pc_pa <- PA$V3 %>% 
+#as_data_frame() %>% 
+#  as_tibble() %>% 
+#  rename(postal_code = value)
 
 # City + Province
-ville <- str_trim(PA$V2, side=c("left")) %>% 
-  as_data_frame() %>% 
-  as_tibble() %>% 
-  rename(ville = value)
+#ville <- str_trim(PA$V2, side=c("left")) %>% 
+#  as_data_frame() %>% 
+#  as_tibble() %>% 
+#  rename(ville = value)
 
 # Street name
 street_name <- 
@@ -125,27 +127,27 @@ street_name <-
   select(-V1, -adress)
 
 # Street prefix
-street_prefix <- 
-  PA2 %>% 
-  mutate(street_prefix = str_trim(str_to_lower(str_extract(PA2$adress, "AV |STREET |CRES |BOUL |TSSE |PL | STREET|CR |ETAGE | ETAGE")), side="right")) %>% 
-  select(-V1, -adress)
+#street_prefix <- 
+#  PA2 %>% 
+#  mutate(street_prefix = str_trim(str_to_lower(str_extract(PA2$adress, "AV |STREET |CRES |BOUL |TSSE |PL | STREET|CR |ETAGE | ETAGE")), side="right")) %>% 
+#  select(-V1, -adress)
 
 # Suite number
-suite_number <- 
-  str_extract(street_name$street_name, "\\s+[:digit:]+\\s") %>% 
-  as_data_frame() %>% 
-  as_tibble() %>% 
-  rename(suite_number = value)
+#suite_number <- 
+#  str_extract(street_name$street_name, "\\s+[:digit:]+\\s") %>% 
+#  as_data_frame() %>% 
+#  as_tibble() %>% 
+#  rename(suite_number = value)
 
 LL_2020_test1 <- 
   LL_2020 %>% 
   mutate(adresse=str_to_lower(adresse)) %>% 
-  cbind(., civic_number) %>% 
-  cbind(., street_name) %>% 
-  cbind(., street_prefix) %>%
-  cbind(., suite_number) %>%
-  cbind(., ville) %>%
-  cbind(., pc_pa) 
+#  cbind(., civic_number) %>% 
+#  cbind(., street_prefix) %>%
+#  cbind(., suite_number) %>%
+#  cbind(., ville) %>%
+#  cbind(., pc_pa) %>% 
+  cbind(., street_name) 
 
 LL_2020_test1 <- 
   LL_2020_test1 %>% 
@@ -159,19 +161,74 @@ LL_2020_test2 <-
   mutate(number_rental_units = ifelse(owner == TRUE, nombre_logements-1, nombre_logements))
 
 
+# If condition for owner/renter -------------------------------------------------------------
+
+LL_2020_test3 <- 
+  LL_2020_test2 %>% 
+  nest(-adresse_postale)
+
+LL_2020_test4 <- 
+  LL_2020_test3 %>% 
+  mutate(property_group_ID = 1:363603) %>% 
+  unnest()
+
+# The following analysis code looks at the companies that get combined with a group_by that combines
+# entries that have both the same name AND postal address. The second group_by combines all the
+# names that were not grouped together because they did not have the same postal address for both.
+# A careful analysis of these entries that operated with more than two postal addresses and owned, 
+# when all the subsidiares combined, more than 10 units were analyzed. Most were people with the 
+# same name (i.e. Andre Tremblay), but the ones with company names will be analyzed for a more 
+# accurate breakdown of the number of units owned by landlords.
+
+LL_test_2020_4 %>% 
+  group_by(nom1, property_group_ID) %>% 
+  summarize(n=n(), logements=sum(nombre_logements)) %>% 
+  group_by(nom1) %>% 
+  summarize(n=n(), logements1=sum(logements)) %>% 
+  filter(n>1) %>% 
+  filter(logements1>10) %>% 
+  View()
+
+# Modify names with slight string differences -------------------------------------------
+
+# Combining the dataset by postal address gives us a great sense of the companies that use
+# multiple names or company subsidiaries to operate in Montreal. Now, it is time to both correct
+# the companies that are owned by the same stakeholders but operated under different postal addresses. 
+# Next, we will give a clear name of the biggest landlords in Montreal (for the ones whose used name
+# is not of recognessence to anyone, but are well known under another name). The list will be long, but 
+# essential for an exhaustive analysis. Such modifications are based on investigative work from my 
+# end, with links provided when pertinent.
+
 # Download UEF for geometry -------------------------------------------------------------
 
-uef <-
+uef_raw <-
   read_sf("data/uniteevaluationfonciere/uniteevaluationfonciere.shp") %>%
   st_transform(32618) %>%
-  filter(!is.na(NOMBRE_LOG)) %>%
+  #filter(!is.na(NOMBRE_LOG)) %>%
   as_tibble() %>%
   distinct(ID_UEV, .keep_all = TRUE) %>%
   st_as_sf()
 
+uef <- 
+  uef_raw %>% 
+  select(NOM_RUE, CIVIQUE_DE, CIVIQUE_FI, NOMBRE_LOG, ANNEE_CONS, MATRICULE8) %>% 
+  rename(numero_matricule=MATRICULE8)
+
+LL_2020sf <- 
+  LL_2020_test4 %>% 
+  select(-valeur_batiment_courant, -valeur_terrain_courant) %>% 
+  inner_join(., uef, by = "numero_matricule")
 
 
 # Save output -------------------------------------------------------------
 
-#save(TKTK, 
-#     file = "output/geometry.Rdata")
+save(LL_2020, LL_2020_test4, LL_2020sf, uef_raw, 
+     file = "output/LL.Rdata")
+
+
+
+
+
+
+
+
