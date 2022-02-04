@@ -125,6 +125,10 @@ lmLMtests <- lm.LMtests(reg1, listw.nonas, test=c("LMerr", "LMlag", "RLMerr", "R
 lmLMtests
 
 lmlag <- lagsarlm(reg.eq1, data = p_model_f, listw.nonas, Durbin = FALSE)
-lmDurbin <- lagsarlm(reg.eq1, data = p_model_f, listw.nonas, Durbin = TRUE)
+summary(lmlag)
 
-impacts(lmDurbin, listw=listw.nonas)
+lmDurbin <- lagsarlm(reg.eq1, data = p_model_f, listw.nonas, Durbin = TRUE)
+summary(lmDurbin)
+
+imDurbin <- impacts(lmDurbin, listw=listw.nonas,R=500)
+summary(imDurbin, zstats=TRUE)
