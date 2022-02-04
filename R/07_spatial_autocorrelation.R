@@ -3,6 +3,7 @@ install.packages("spdep")
 install.packages("spatialreg")
 library(spdep)
 library(spatialreg)
+library(tidyverse)
 
 p <- 
   kmeans_CT %>% 
