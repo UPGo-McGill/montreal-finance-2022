@@ -712,7 +712,7 @@ reg_kmeans_CT$reg11res <- rstandard(reg11)
 summary(reg11)
 
 reg12 <- lm(`P. financialized rental ownership` ~ `P. renters' housing stress` + `Median rent` + `P. one year mobility` + 
-              `P. immigrants` + `P. dwellings in five+ storeys` + `P. pop 18-24`, data=reg_kmeans_CT)
+              `P. visible minorities` + `P. dwellings in five+ storeys` + `P. pop 18-24`, data=reg_kmeans_CT)
 reg_kmeans_CT$reg12pred <- predict(reg12)
 reg_kmeans_CT$reg12res <- rstandard(reg12)
 summary(reg12)
