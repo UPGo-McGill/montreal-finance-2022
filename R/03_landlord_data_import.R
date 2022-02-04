@@ -450,11 +450,11 @@ LL_sf_centroid <-
 
 # Download permit dataset -------------------------------------------------------------
 
-permits <-
-  read_sf("data/permis-construction/permis-construction.shp") %>%
-  st_transform(32618) %>%
-  as_tibble() %>%
-  st_as_sf()
+# permits <-
+#   read_sf("data/permis-construction/permis-construction.shp") %>%
+#   st_transform(32618) %>%
+#   as_tibble() %>%
+#   st_as_sf()
 
 
 # 2020 asking rents -------------------------------------------------------------

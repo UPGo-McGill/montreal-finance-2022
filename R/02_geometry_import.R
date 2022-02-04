@@ -165,6 +165,13 @@ city <-
   st_union() %>%
   smoothr::fill_holes(400)
 
+# Quebec province ---------------------------------------------------------
+
+province <- 
+  get_census("CA16", regions = list(PR = "24"), geo_format = "sf") %>% 
+  st_transform(32618) %>% 
+  select(geometry)
+
 
 # Save output -------------------------------------------------------------
 
