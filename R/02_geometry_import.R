@@ -2,7 +2,6 @@
 
 source("R/01_startup.R")
 library(cancensus)
-library(osmdata)
 
 # This script requires `montreal_boroughs_2019.shp` to be present in
 # `data/shapefiles`.
@@ -174,5 +173,6 @@ boroughs <-
 
 # Save output and clean up ------------------------------------------------
 
-qsavem(CT, CT_06, province, file = "output/geometry.qsm")
+qsavem(CT, CT_06, province, file = "output/geometry.qsm",
+       nthreads = availableCores())
 rm(boroughs_raw, DA, downtown)
