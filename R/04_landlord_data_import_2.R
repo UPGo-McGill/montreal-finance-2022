@@ -9,7 +9,7 @@ qload("output/LL.qsm", nthreads = availableCores())
 
 # Import addresses and owners after categorization ------------------------
 
-landlord_names <- readxl::read_xlsx("data/postal_adresses_owners.xlsx")
+landlord_names <- readxl::read_xlsx("data/postal_addresses_owners.xlsx")
 
 landlords <-
   LL_2020_postal |> 
