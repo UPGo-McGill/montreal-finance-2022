@@ -24,7 +24,7 @@ LL_2020 <-
          nom_8 = Nom8, nom_9 = Nom9, 
          nombre_chambres_locatives = Nombre_de_chambres_locatives, 
          nombre_locaux_non_residentiels = Nombre_de_locaux_non_residentiels,
-         nombre_logements = Nombre_de_chambres_locatives, 
+         nombre_logements = Nombre_de_logements, 
          nombre_etages = Nombre_detages, 
          statut_owner_1 = Statut_aux_fins_dimposition_scolaire, 
          statut_owner_10 = Statut_aux_fins_dimposition_scolaire10, 
@@ -108,26 +108,19 @@ LL_2020_postal <-
 
 # Export postal address owners for manual analysis ------------------------
 
-postal_adresses_owners <-
+postal_addresses_owners <-
   LL_2020_postal |> 
   group_by(adresse_postale) |> 
   summarize(number_rental_units = sum(number_rental_units, na.rm = TRUE)) |> 
   arrange(desc(number_rental_units)) |> 
   filter(number_rental_units >= 1)
 
-write_csv(postal_adresses_owners, "data/postal_adresses_owners.csv")
+write_csv(postal_addresses_owners, "data/postal_addresses_owners.csv")
 
 
 # Save data for landlord analysis -----------------------------------------
 
-LL_2020_postal <- 
-  LL_2020_postal |>  
-  select(adresse, numero_matricule, adresse_postale, landlord_rank,
-         landlord_name, owner, annee_construction, borough, date_inscription, 
-         nom_1, nom_2, statut_owner_1, statut_owner_2, 
-         nombre_chambres_locatives, nombre_logements, number_rental_units)
-
 qsavem(LL_2020, LL_2020_postal, file = "output/LL.qsm", 
        nthreads = availableCores())
 
-rm(LL_2020_ranked, postal_adresses_owners, street_name)
+rm(LL_2020_ranked, postal_addresses_owners, street_name)
