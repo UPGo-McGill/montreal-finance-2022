@@ -1,8 +1,11 @@
 
-install.packages("spdep")
-install.packages("spatialreg")
+#### 09 Statistical Models ########################################################
+
+require("spdep")
+require("spatialreg")
 library(ape)
 library(spdep)
+library(lmtest)
 library(spatialreg)
 library(tidyverse)
 library(MASS)
@@ -11,72 +14,22 @@ library(tidyr)
 
 options(scipen=999)
 
+# Load data --------------------------------------------------------------------
+
 p <- 
   kmeans_CT %>% 
   left_join(., CT %>% select(GeoUID), by = "GeoUID") %>% 
   st_as_sf()
 
-# 8. Moran's test
-
-w <- poly2nb(p, row.names=p$GeoUID)
-class(w)
-summary(w)
-str(w)
-wm <- nb2mat(w, style='B')
-n <- nrow(p)
-y <- p$p_financialized
-ybar <- mean(y)
-
-# dy <- y - ybar
-# g <- expand.grid(dy, dy)
-# yiyj <- g[,1] * g[,2]
-
-yi <- rep(dy, each=n)
-yj <- rep(dy)
-yiyj <- yi * yj
-
-pm <- matrix(yiyj, ncol=n)
-
-pmw <- pm * wm
-pmw
-
-spmw <- sum(pmw)
-spmw
-
-smw <- sum(wm)
-sw  <- spmw / smw
-
-vr <- n / sum(dy^2)
-MI <- vr * sw
-MI
-EI <- -1/(n-1)
-EI
-
-ww <-  nb2listw(w, style='B')
-ww
-
-moran(p$p_financialized, ww, n=length(ww$neighbours), S0=Szero(ww))
-
-moran.test(p$p_financialized, ww, randomisation=FALSE)
-moran.mc(p$p_financialized, ww, nsim=99)
-
-# 9. Regression Models
-
-# 9.3. Spatial weights
+# Preprocessing and Spatial weights --------------------------------------------
 
 queen.nb <- poly2nb(p) 
 rook.nb  <- poly2nb(p, queen=FALSE) 
 
 queen.listw <- nb2listw(queen.nb) 
 rook.listw  <- nb2listw(rook.nb) 
-
 listw1 <-  queen.listw
 
-# 10. Classical approach
-
-# 10.2. OLS
-
-stdize <- function(x, ...) {(x - min(x, ...)) / (max(x, ...) - min(x, ...))}
 
 p_model <- p %>%
   dplyr::select(p_financialized, 
@@ -102,7 +55,9 @@ queen.listw.nonas <- nb2listw(queen.nonas)
 listw.nonas <-queen.listw.nonas
 nb2mat(queen.nonas)
 
-var_tests <- p_model_f %>%
+# Exploratory Spatial Diagnostics ----------------------------------------------
+
+moran_tests <- p_model_f %>%
   dplyr::select(-c(geometry, median_rent, p_18_24)) %>%
   as.tibble()%>%
   dplyr::select(-geometry) %>%
@@ -111,26 +66,111 @@ var_tests <- p_model_f %>%
                                    -c(geometry, median_rent, p_18_24)))) %>%
   dplyr::select(variable, observed, expected, sd, p.value)
 
-reg.eq1 <- p_financialized ~ p_thirty_renter + n_median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + log_18_24
+moran_tests
+
+# OLS Models -------------------------------------------------------------------
+
+reg.eq1 <- log_financialized ~ p_thirty_renter + n_median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + log_18_24
+reg.eq2 <- p_financialized ~ p_thirty_renter + n_median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + p_18_24
+reg.eq3 <- p_financialized ~ p_thirty_renter + median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + p_18_24
 
 reg1 <- lm(reg.eq1, data = p_model_f)
 summary(reg1)
 
-# 10.2.1. Check residual spatial dependence
+reg2 <- lm(reg.eq2, data = p_model_f)
+summary(reg2)
+
+reg3 <- lm(reg.eq3, data = p_model_f)
+summary(reg3)
+
+p_model_f$reg1_res <- reg1$residuals
+p_model_f$reg1_fit <- reg1$fitted.values
+
+p_model_f$reg2_res <- reg2$residuals
+p_model_f$reg2_fit <- reg2$fitted.values
+
+p_model_f$reg3_res <- reg3$residuals
+p_model_f$reg3_fit <- reg3$fitted.values
+
+# OLS Diagnostics --------------------------------------------------------------
+
+dwtest(reg1)
+shapiro.test(p_model_f$reg1_res)
+ncvTest(reg1)
+qqnorm(p_model_f$reg1_res)
+qqline(p_model_f$reg1_res)
+hist(p_model_f$reg1_res)
+
+ggplot(p_model_f, aes(reg1_fit, reg1_res)) +
+  geom_jitter(shape = 1) +
+  geom_hline(yintercept = 0, color = "red") +
+  ylab("Residuals") +
+  xlab("Fitted")
+
+ggplot(p_model_f, aes(row.names(p_model_f), reg1_res)) +
+  geom_point(shape = 1) +
+  geom_hline(yintercept = 0, color = "red")
+
+dwtest(reg2)
+shapiro.test(p_model_f$reg2_res)
+ncvTest(reg2)
+qqnorm(p_model_f$reg2_res)
+qqline(p_model_f$reg2_res)
+hist(p_model_f$reg2_res)
+
+ggplot(p_model_f, aes(reg2_fit, reg2_res)) +
+  geom_jitter(shape = 1) +
+  geom_hline(yintercept = 0, color = "red") +
+  ylab("Residuals") +
+  xlab("Fitted")
+
+ggplot(p_model_f, aes(row.names(p_model_f), reg2_res)) +
+  geom_point(shape = 1) +
+  geom_hline(yintercept = 0, color = "red")
+
+dwtest(reg3)
+shapiro.test(p_model_f$reg3_res)
+ncvTest(reg3)
+qqnorm(p_model_f$reg3_res)
+qqline(p_model_f$reg3_res)
+hist(p_model_f$reg3_res)
+
+ggplot(p_model_f, aes(reg3_fit, reg3_res)) +
+  geom_jitter(shape = 1) +
+  geom_hline(yintercept = 0, color = "red") +
+  ylab("Residuals") +
+  xlab("Fitted")
+
+ggplot(p_model_f, aes(row.names(p_model_f), reg3_res)) +
+  geom_point(shape = 1) +
+  geom_hline(yintercept = 0, color = "red")
+
+# Model Spatial Diagnostics ----------------------------------------------------
 
 lmMoranTest <- lm.morantest(reg1,listw.nonas)
 lmMoranTest
 
-lmLMtests <- lm.LMtests(reg1, listw.nonas, test=c("LMerr", "LMlag", "RLMerr", "RLMlag", "SARMA"))
+lmMoranTest <- lm.morantest(reg2,listw.nonas)
+lmMoranTest
+
+lmMoranTest <- lm.morantest(reg3,listw.nonas)
+lmMoranTest
+
+lmLMtests <- lm.LMtests(reg2, listw.nonas, test=c("LMerr", "LMlag", "RLMerr", "RLMlag", "SARMA"))
 lmLMtests
 
-OLS_SLX <- lmSLX(reg.eq1, data = p_model_f, listw.nonas)
+# Spatial Models ---------------------------------------------------------------
+
+## SLX -------------------------------------------------------------------------
+
+OLS_SLX <- lmSLX(reg.eq2, data = p_model_f, listw.nonas)
 summary(OLS_SLX)
 
 imSLX <- impacts(OLS_SLX, listw=listw.nonas, R=500)
 imSLXSum <- summary(imSLX, zstats=TRUE)
 imSLXSum
 
+## SAR -------------------------------------------------------------------------
 
 lmSAR <- lagsarlm(reg.eq1, data = p_model_f, listw.nonas, Durbin = FALSE)
 summary(lmSAR)
@@ -139,12 +179,16 @@ imSAR <- impacts(lmSAR, listw=listw.nonas,R=500)
 imSARSum <- summary(imSAR, zstats=TRUE)
 imSARSum
 
+## SLD -------------------------------------------------------------------------
+
 lmDurbin <- lagsarlm(reg.eq1, data = p_model_f, listw.nonas, Durbin = TRUE)
 summary(lmDurbin)
 
 imDurbin <- impacts(lmDurbin, listw=listw.nonas,R=500)
 imDurbinSum <- summary(imDurbin, zstats=TRUE)
 imDurbinSum
+
+## Impacts ---------------------------------------------------------------------
 
 all_impacts <- data.frame(imSLX$impacts)
 colnames(all_impacts) <- c('direct_SLX', 'indirect_SLX', 'total_SLX')
@@ -176,6 +220,8 @@ all_impacts <- all_impacts %>%
          indirect_SLD = ifelse(indirect_SLD_p < 0.05, indirect_SLD, "Not significant"),
          total_SLD = ifelse(total_SLD_p < 0.05, total_SLD, "Not significant"),) %>%
   dplyr::select(-ends_with("_p"))
+
+## Information Criteria --------------------------------------------------------
 
 models = list(reg1, lmSAR, OLS_SLX, lmDurbin)
 model_fits <- data.frame(AIC = sapply(models, AIC),
