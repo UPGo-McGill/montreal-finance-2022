@@ -2,14 +2,16 @@
 
 # Load packages -----------------------------------------------------------
 
-library(tidyverse)
-library(lubridate)
-library(upgo)
-library(sf)
-library(stringr)
-library(tidyr)
-library(future)
-library(qs)
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(lubridate)
+  library(upgo)
+  library(sf)
+  library(stringr)
+  library(tidyr)
+  library(future)
+  library(qs)
+})
 
 
 # Set global variables ----------------------------------------------------

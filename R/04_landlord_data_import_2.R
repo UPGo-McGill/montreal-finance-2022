@@ -19,3 +19,8 @@ landlords <-
   filter(number_rental_units >= 1)
 
 write_csv(landlords, "data/landlords.csv")
+
+qsavem(landlord_names, LL_2020, LL_2020_postal, file = "output/LL.qsm", 
+       nthreads = availableCores())
+
+rm(landlords)

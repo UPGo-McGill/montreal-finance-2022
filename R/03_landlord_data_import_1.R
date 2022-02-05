@@ -122,11 +122,12 @@ write_csv(postal_adresses_owners, "data/postal_adresses_owners.csv")
 
 LL_2020_postal <- 
   LL_2020_postal |>  
-  select(adresse, numero_matricule, adresse_postale, landlord_rank, owner, 
-         annee_construction, borough, date_inscription, nom_1, nom_2, 
-         statut_owner_1, statut_owner_2, nombre_chambres_locatives, 
-         nombre_logements, number_rental_units)
+  select(adresse, numero_matricule, adresse_postale, landlord_rank,
+         landlord_name, owner, annee_construction, borough, date_inscription, 
+         nom_1, nom_2, statut_owner_1, statut_owner_2, 
+         nombre_chambres_locatives, nombre_logements, number_rental_units)
 
 qsavem(LL_2020, LL_2020_postal, file = "output/LL.qsm", 
        nthreads = availableCores())
-  
+
+rm(LL_2020_ranked, postal_adresses_owners, street_name)
