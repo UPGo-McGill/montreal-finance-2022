@@ -1,9 +1,10 @@
-#### 05 CMHC RENTS IMPORT ############################################
+#### 058 CMHC RENTS IMPORT #####################################################
 
 source("R/01_startup.R")
 library(readxl)
 
-# Average rents 2019 ----------------------------------------------------------
+
+# Average rents 2019 ------------------------------------------------------
 
 rents_2019 <- 
   read_excel("data/average_rents/2019_rents.xlsx") %>% 
@@ -479,20 +480,15 @@ rents_total_2010 <-
   select(-year)
 
 rents_CT <- 
-  full_join(rents_total_2019, rents_total_2018, by="GeoUID") %>% 
-  full_join(., rents_total_2017, by="GeoUID") %>% 
-  full_join(., rents_total_2016, by="GeoUID") %>% 
-  full_join(., rents_total_2015, by="GeoUID") %>% 
-  full_join(., rents_total_2014, by="GeoUID") %>% 
-  full_join(., rents_total_2013, by="GeoUID") %>% 
-  full_join(., rents_total_2012, by="GeoUID") %>% 
-  full_join(., rents_total_2011, by="GeoUID") %>% 
-  full_join(., rents_total_2010, by="GeoUID")
+  reduce(list(rents_total_2019, rents_total_2018, rents_total_2017,
+              rents_total_2016, rents_total_2015, rents_total_2014,
+              rents_total_2013, rents_total_2012, rents_total_2011,
+              rents_total_2010), full_join, by = "GeoUID")
 
 rents_CT <- 
   rents_CT %>% 
   mutate(p_change_2015_2019 = (rent_2019-rent_2015)/rent_2015,
          p_change_2010_2019 = (rent_2019-rent_2010)/rent_2010) 
 
-save(rents_CT, rents_decade,   
-     file = "output/rents_cmhc.Rdata")
+qsavem(rents_CT, rents_decade, file = "output/rents_cmhc.qsm",
+       nthreads = availableCores())

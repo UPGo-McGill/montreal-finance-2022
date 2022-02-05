@@ -1,60 +1,60 @@
 #### 04 BASIC DESCRIPTIVE ANALYSIS ########################################
 
 source("R/01_startup.R")
-load("output/LL.Rdata")
+qload("output/LL.qsm", nthreads = availableCores())
 
-# GRAPH 1 - Number of properties built by year of construction ---------------------------------
 
-LL_2020 %>% 
-  filter(!is.na(nombre_logements)) %>% 
-  filter(annee_construction >= 1920) %>% 
-  group_by(annee_construction) %>%
-  summarize(`Number of residential units built`=sum(nombre_logements)) %>% 
-  ggplot(aes(x= annee_construction, y= `Number of residential units built`))+
-  geom_line(color=col_palette[1]) +
-  geom_smooth(se=FALSE, color=col_palette[2])+
-  xlab("Year of construction")+ 
-  scale_y_continuous(name="Number of units built", label = scales::comma)+
+# Number of properties built by year of construction ----------------------
+
+LL_2020 |> 
+  filter(!is.na(nombre_logements), annee_construction >= 1920) |> 
+  group_by(annee_construction) |> 
+  summarize(`Number of residential units built`=sum(nombre_logements)) |> 
+  ggplot(aes(x = annee_construction, y = `Number of residential units built`)) +
+  geom_line(color = col_palette[1]) +
+  geom_smooth(se = FALSE, color = col_palette[2]) +
+  xlab("Year of construction") + 
+  scale_y_continuous(name = "Number of units built", label = scales::comma) +
   theme_minimal()
 
 
-# Ownership concentration in the city -------------------
+# Ownership concentration in the city -------------------------------------
 
 rental_concentration <- 
-  LL_analyzed %>% 
-  filter(!is.na(number_rental_units)) %>% 
-  filter(number_rental_units > 0) %>% 
-  group_by(landlord_name) %>% 
-  summarize(n=sum(number_rental_units))
+  LL_analyzed |> 
+  filter(!is.na(number_rental_units), number_rental_units > 0) |> 
+  group_by(landlord_name) |> 
+  summarize(n = sum(number_rental_units))
 
 rental_concentration_500 <- 
-  LL_analyzed %>% 
-  filter(!is.na(number_rental_units)) %>% 
-  filter(number_rental_units > 0) %>% 
-  group_by(landlord_name) %>% 
-  summarize(n=sum(number_rental_units)) %>% 
-  arrange(desc(n)) %>% 
+  LL_analyzed |> 
+  filter(!is.na(number_rental_units), number_rental_units > 0) |> 
+  group_by(landlord_name) |> 
+  summarize(n = sum(number_rental_units)) |> 
+  arrange(desc(n)) |> 
   slice(1:500)
 
-rental_concentration %>% 
-  group_by(n) %>% 
-  summarize(number_landlords = sum(n())) %>% 
-  ggplot()+
-  geom_line(aes(x=n, y=number_landlords))+
-  xlim(c(0,100))
+rental_concentration |> 
+  count(n, name = "number_landlords") |> 
+  ggplot() +
+  geom_line(aes(x = n, y = number_landlords)) +
+  xlim(c(0, 100))
 
-#' [1] average units owned
+# Average units owned
 mean(rental_concentration$n) 
 mean(rental_concentration_500$n) 
 
-#' [5] Top 10% revenue
-rental_concentration %>% summarize(top_10 = sum(n[n > quantile(n, .9)]) / sum(n))
+# Top 10%
+rental_concentration |> 
+  summarize(top_10 = sum(n[n > quantile(n, .9)]) / sum(n))
 
-#' [6] Top 5% revenue
-rental_concentration %>% summarize(top_5 = sum(n[n > quantile(n, .95)]) / sum(n))
+# Top 5%
+rental_concentration |> 
+  summarize(top_5 = sum(n[n > quantile(n, .95)]) / sum(n))
 
-#' [7] Top 1% revenue
-rental_concentration %>% summarize(top_1 = sum(n[n > quantile(n, .99)]) / sum(n))
+# Top 1%
+rental_concentration |> 
+  summarize(top_1 = sum(n[n > quantile(n, .99)]) / sum(n))
 
 landlord_repartition <- 
   rental_concentration %>%
@@ -68,8 +68,7 @@ landlord_repartition <-
          value = "value") %>% 
   mutate(percentile = factor(percentile, 
                              levels = c('Top 1%', 'Top 5%', 'Top 10%', 
-                                        'Top 20%'))
-  ) %>% 
+                                        'Top 20%'))) %>% 
   ggplot() +
   geom_bar(aes(percentile, value, fill = percentile), stat = "identity") +
   theme_minimal() +
@@ -82,9 +81,6 @@ landlord_repartition <-
                                     size = 10),
         legend.text = element_text(size = 10),
         legend.position = "none")
-
-ggsave("output/figures/landlord_repartition.pdf", plot = landlord_repartition, width = 8, 
-       height = 5, units = "in", useDingbats = FALSE)
 
 
 # Ownership by type of landlord -------------------
