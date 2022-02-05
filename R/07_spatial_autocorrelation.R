@@ -111,7 +111,7 @@ var_tests <- p_model_f %>%
                                    -c(geometry, median_rent, p_18_24)))) %>%
   dplyr::select(variable, observed, expected, sd, p.value)
 
-reg.eq1 <- log_financialized ~ p_thirty_renter + n_median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + log_18_24
+reg.eq1 <- p_financialized ~ p_thirty_renter + n_median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + log_18_24
 
 reg1 <- lm(reg.eq1, data = p_model_f)
 summary(reg1)
@@ -124,11 +124,62 @@ lmMoranTest
 lmLMtests <- lm.LMtests(reg1, listw.nonas, test=c("LMerr", "LMlag", "RLMerr", "RLMlag", "SARMA"))
 lmLMtests
 
-lmlag <- lagsarlm(reg.eq1, data = p_model_f, listw.nonas, Durbin = FALSE)
-summary(lmlag)
+OLS_SLX <- lmSLX(reg.eq1, data = p_model_f, listw.nonas)
+summary(OLS_SLX)
+
+imSLX <- impacts(OLS_SLX, listw=listw.nonas, R=500)
+imSLXSum <- summary(imSLX, zstats=TRUE)
+imSLXSum
+
+
+lmSAR <- lagsarlm(reg.eq1, data = p_model_f, listw.nonas, Durbin = FALSE)
+summary(lmSAR)
+
+imSAR <- impacts(lmSAR, listw=listw.nonas,R=500)
+imSARSum <- summary(imSAR, zstats=TRUE)
+imSARSum
 
 lmDurbin <- lagsarlm(reg.eq1, data = p_model_f, listw.nonas, Durbin = TRUE)
 summary(lmDurbin)
 
 imDurbin <- impacts(lmDurbin, listw=listw.nonas,R=500)
-summary(imDurbin, zstats=TRUE)
+imDurbinSum <- summary(imDurbin, zstats=TRUE)
+imDurbinSum
+
+all_impacts <- data.frame(imSLX$impacts)
+colnames(all_impacts) <- c('direct_SLX', 'indirect_SLX', 'total_SLX')
+all_impacts[c('direct_SLD', 'indirect_SLD', 'total_SLD')] <- data.frame(imDurbin$res)
+all_impacts[c('direct_SAR', 'indirect_SAR', 'total_SAR')]<- data.frame(imSAR$res)
+
+all_impacts[c('direct_SLD_p', 'indirect_SLD_p', 'total_SLD_p')] <- data.frame(imDurbinSum$pzmat)
+all_impacts[c('direct_SAR_p', 'indirect_SAR_p', 'total_SAR_p')] <- data.frame(imSARSum$pzmat)
+all_impacts[c('direct_SLX_p', 'indirect_SLX_p', 'total_SLX_p')] <- data.frame(imSLXSum$pzmat)
+
+all_impacts <- all_impacts %>%
+  dplyr::select(starts_with("direct_SLX"), 
+                starts_with("direct_SLD"),
+                starts_with("direct_SAR"),
+                starts_with("indirect_SLX"), 
+                starts_with("indirect_SLD"), 
+                starts_with("indirect_SAR"), 
+                starts_with("total_SLX"),
+                starts_with("total_SLD"),
+                starts_with("total_SAR")) %>%
+  mutate(across(where(is.numeric), round, 5)) %>%
+  mutate(direct_SLX = ifelse(direct_SLX_p < 0.05, direct_SLX, "Not significant"),
+         indirect_SLX = ifelse(indirect_SLX_p < 0.05, indirect_SLX, "Not significant"),
+         total_SLX = ifelse(total_SLX_p < 0.05, total_SLX, "Not significant"),
+         direct_SAR = ifelse(direct_SAR_p < 0.05, direct_SAR, "Not significant"),
+         indirect_SAR = ifelse(indirect_SAR_p < 0.05, indirect_SAR, "Not significant"),
+         total_SAR = ifelse(total_SAR_p < 0.05, total_SAR, "Not significant"),
+         direct_SLD = ifelse(direct_SLD_p < 0.05, direct_SLD, "Not significant"),
+         indirect_SLD = ifelse(indirect_SLD_p < 0.05, indirect_SLD, "Not significant"),
+         total_SLD = ifelse(total_SLD_p < 0.05, total_SLD, "Not significant"),) %>%
+  dplyr::select(-ends_with("_p"))
+
+models = list(reg1, lmSAR, OLS_SLX, lmDurbin)
+model_fits <- data.frame(AIC = sapply(models, AIC),
+                         AICc = sapply(models, MuMIn::AICc),
+                         BIC = sapply(models, BIC))
+model_fits
+                         
