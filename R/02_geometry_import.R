@@ -172,18 +172,7 @@ boroughs <-
   relocate(borough)
 
 
-# Montreal CSD ------------------------------------------------------------
-
-city <-
-  boroughs_raw |> 
-  st_combine() |>  
-  st_union() |> 
-  st_cast("POLYGON") |> 
-  st_union() |> 
-  smoothr::fill_holes(400)
-
-
 # Save output and clean up ------------------------------------------------
 
-qsavem(city, CT, CT_06, province, DA, file = "output/geometry.qsm")
-rm(boroughs_raw, downtown)
+qsavem(CT, CT_06, province, file = "output/geometry.qsm")
+rm(boroughs_raw, DA, downtown)
