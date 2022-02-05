@@ -1,5 +1,5 @@
 
-#### 09 Statistical Models ########################################################
+#### 11 Statistical Models #####################################################
 
 require("spdep")
 require("spatialreg")
@@ -170,6 +170,9 @@ imSLX <- impacts(OLS_SLX, listw=listw.nonas, R=500)
 imSLXSum <- summary(imSLX, zstats=TRUE)
 imSLXSum
 
+p_model_f$SLX_res <- OLS_SLX$residuals
+p_model_f$SLX_fit <- OLS_SLX$fitted.values
+
 ## SAR -------------------------------------------------------------------------
 
 lmSAR <- lagsarlm(reg.eq1, data = p_model_f, listw.nonas, Durbin = FALSE)
@@ -179,6 +182,9 @@ imSAR <- impacts(lmSAR, listw=listw.nonas,R=500)
 imSARSum <- summary(imSAR, zstats=TRUE)
 imSARSum
 
+p_model_f$SAR_res <- lmSAR$residuals
+p_model_f$SAR_fit <- lmSAR$fitted.values
+
 ## SLD -------------------------------------------------------------------------
 
 lmDurbin <- lagsarlm(reg.eq1, data = p_model_f, listw.nonas, Durbin = TRUE)
@@ -187,6 +193,64 @@ summary(lmDurbin)
 imDurbin <- impacts(lmDurbin, listw=listw.nonas,R=500)
 imDurbinSum <- summary(imDurbin, zstats=TRUE)
 imDurbinSum
+
+p_model_f$SLD_res <- lmDurbin$residuals
+p_model_f$SLD_fit <- lmDurbin$fitted.values
+
+## Spatial Model Diagnostics ---------------------------------------------------
+
+### SLX
+
+dwtest(OLS_SLX)
+shapiro.test(p_model_f$SLX_res)
+ncvTest(OLS_SLX)
+qqnorm(p_model_f$SLX_res)
+qqline(p_model_f$SLX_res)
+hist(p_model_f$SLX_res)
+
+ggplot(p_model_f, aes(SLX_fit, SLX_res)) +
+  geom_jitter(shape = 1) +
+  geom_hline(yintercept = 0, color = "red") +
+  ylab("Residuals") +
+  xlab("Fitted")
+
+ggplot(p_model_f, aes(row.names(p_model_f), SLX_res)) +
+  geom_point(shape = 1) +
+  geom_hline(yintercept = 0, color = "red")
+
+### SAR ------------------------------------------------------------------------
+
+shapiro.test(p_model_f$SAR_res)
+qqnorm(p_model_f$SAR_res)
+qqline(p_model_f$SAR_res)
+hist(p_model_f$SAR_res)
+
+ggplot(p_model_f, aes(SAR_fit, SAR_res)) +
+  geom_jitter(shape = 1) +
+  geom_hline(yintercept = 0, color = "red") +
+  ylab("Residuals") +
+  xlab("Fitted")
+
+ggplot(p_model_f, aes(row.names(p_model_f), SAR_res)) +
+  geom_point(shape = 1) +
+  geom_hline(yintercept = 0, color = "red")
+
+### SLD ------------------------------------------------------------------------
+
+shapiro.test(p_model_f$SLD_res)
+qqnorm(p_model_f$SLD_res)
+qqline(p_model_f$SLD_res)
+hist(p_model_f$SLD_res)
+
+ggplot(p_model_f, aes(SLD_fit, SLD_res)) +
+  geom_jitter(shape = 1) +
+  geom_hline(yintercept = 0, color = "red") +
+  ylab("Residuals") +
+  xlab("Fitted")
+
+ggplot(p_model_f, aes(row.names(p_model_f), SLD_res)) +
+  geom_point(shape = 1) +
+  geom_hline(yintercept = 0, color = "red")
 
 ## Impacts ---------------------------------------------------------------------
 
