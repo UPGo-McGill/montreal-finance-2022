@@ -4,6 +4,9 @@ source("R/01_startup.R")
 library(cancensus)
 library(osmdata)
 
+# This script requires `montreal_boroughs_2019.shp` to be present in
+# `data/shapefiles`.
+
 
 # Quebec province ---------------------------------------------------------
 
