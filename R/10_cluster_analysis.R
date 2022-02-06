@@ -1,69 +1,55 @@
 #### 10 CLUSTER ANALYSIS #######################################################
 
+source("R/01_startup.R")
+qload("output/data.qsm", nthreads = availableCores())
+qload("output/geometry.qsm", nthreads = availableCores())
+
 library(cluster)
 library(factoextra)
-library(gridExtra)
-library(ggpubr)
+# library(gridExtra)
+# library(ggpubr)
 
-# Do the kmeans with the CT dataset -----------------------------------
+set.seed(2022)
 
-kmeans_CT <- 
-  CT |> 
+
+# Prepare dataset_kmeans --------------------------------------------------
+
+data_kmeans <- 
+  data_CT |> 
   st_drop_geometry() |> 
-  left_join(percentage_financialized, by = "GeoUID") |> 
-  mutate(p_financialized = coalesce(p_financialized, 0))
+  select(p_thirty_renter, median_rent, average_value_dwellings, p_condo,
+         p_renter, p_repairs, p_vm, p_immigrants, p_mobility_one_year,
+         p_mobility_five_years, p_five_more_storeys, med_hh_income, p_18_24,
+         change_renter_dwellings, distance_dt, asking_rent) |> 
+  na.omit() |> 
+  scale() |> 
+  as_tibble()
 
 
-#kmeans_table %>% 
-#  ggplot()+
-#  geom_sf(aes(fill=p_financialized), color=NA) +
-#  scale_fill_gradientn(colors = col_wes, 
-#                       limits = c(0, 0.75),
-#                       oob = scales::squish,
-#                       na.value = "#3B9AB2")+
-#  theme_void()
+# Determine number of clusters --------------------------------------------
+
+fviz_nbclust(data_kmeans, kmeans, method = "silhouette")
+data_kmeans |>
+  clusGap(FUN = kmeans, nstart = 25, K.max = 10, B = 50) |> 
+  fviz_gap_stat()
 
 
-# Have a first go at 
-# kmeans_table <- 
-#   kmeans_table %>% 
-#   st_drop_geometry() %>% 
-#   select(-c(GeoUID, landlord_name, landlord_rank, conditions_particulieres)) %>%
-#   select(numero_matricule, everything())
-# kmeans_test1 <- na.omit(kmeans_table)
-# head1 <- kmeans_test1$landlord_type
+# Compute k means with 5 clusters -----------------------------------------
+
+k_result <- kmeans(data_kmeans, centers = 5, nstart = 25)
+qsave(k_result, file = "output/k_result.qs")
 
 
-kmeans_test2 <- na.omit(kmeans_CT)
+# Visualize the clusters --------------------------------------------------
 
-head2 <- kmeans_test2$p_financialized
-
-kmeans_test2 <-
-  kmeans_test2 %>%
-  select(-GeoUID, -p_financialized, -dwellings)
-
-kmeans_test2 <- scale(kmeans_test2)
+fviz_cluster(k_result, data = data_kmeans)
 
 
-# Determine number of clusters --------------------------------------------------------
+  theme_minimal()
 
-fviz_nbclust(kmeans_test2, kmeans, method = "silhouette")
+ggplot(data_kmeans)
 
-gap_stat <- clusGap(kmeans_test2, FUN = kmeans, nstart = 25,
-                     K.max = 10, B = 50)
- 
-fviz_gap_stat(gap_stat)
-
-
-# Compute kmeans test 2 with five clusters --------------------------------------------------------
-
-k2 <- kmeans(kmeans_test2, centers = 5, nstart = 25)
-
-# Visualize the clusters
-
-fviz_cluster(k2, data = kmeans_test2)
-
-clusters_test2 <- k2$cluster
+clusters <- k2$cluster
 
 points_five <- 
   kmeans_CT %>% 

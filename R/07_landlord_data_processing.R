@@ -144,8 +144,8 @@ CT <-
 
 qsavem(LL_2020, LL_analyzed, LL_sf_centroid, file = "output/LL.qsm",
        nthreads = availableCores())
-qsavem(boroughs, CT, CT_06, province, file = "output/geometry.qsm",
-       nthreads = availableCores())
+qsavem(boroughs, CT, CT_06, province, streets_downtown, 
+       file = "output/geometry.qsm", nthreads = availableCores())
 
 rm(asking_rents, individuals_landlords, LL_sf, ltr, non_fz_PM_landlords,
    req_names, req_parsed, total_landlords, uef, uef_centroid, individuals,
