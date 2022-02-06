@@ -66,7 +66,7 @@ fig_1_hist <-
                                "#A53B6A"), guide = NULL) +
   theme_minimal()
 
-layout <- "
+fig_1_layout <- "
 AABB
 AABB
 AABB
@@ -76,7 +76,7 @@ CCCC"
 
 fig_1 <- fig_1_map + fig_1_hist + guide_area() + 
   theme(legend.position = "bottom") + 
-  plot_layout(design = layout, guides = "collect") + 
+  plot_layout(design = fig_1_layout, guides = "collect") + 
   plot_annotation(tag_levels = "A") 
 
 ggsave("output/figure_1.pdf", plot = fig_1, width = 8, height = 5, units = "in", 
@@ -85,30 +85,55 @@ ggsave("output/figure_1.pdf", plot = fig_1, width = 8, height = 5, units = "in",
 
 # Figure 2. Cluster map ---------------------------------------------------
 
-data_CT |> 
+data_CT_clusters <- 
+  data_CT |> 
   na.omit() |> 
   mutate(cluster = k_result$cluster) |> 
   mutate(cluster = case_when(
-    cluster == 1 ~ "Gentrifying non-financialized",
+    cluster == 1 ~ "Suburban non-financialized",
     cluster == 2 ~ "Immigrant periphery non-financialized",
-    cluster == 3 ~ "Affluent financialized",
-    cluster == 4 ~ "Suburban non-financialized",
-    cluster == 5 ~ "Precarious and student financialized")) |> 
+    cluster == 3 ~ "Precarious and student financialized",
+    cluster == 4 ~ "Gentrifying non-financialized",
+    cluster == 5 ~ "Affluent financialized")) |> 
   mutate(cluster = factor(cluster, levels = c(
     "Precarious and student financialized", "Affluent financialized",
     "Suburban non-financialized", "Gentrifying non-financialized",
-    "Immigrant periphery non-financialized"))) |> 
+    "Immigrant periphery non-financialized")))
+
+fig_2_poly <-
+  data_CT_clusters |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
   geom_sf(aes(fill = cluster), colour = "transparent") +
   scale_fill_manual(name = NULL, values = col_palette[c(1, 3, 4, 2, 5)]) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
   upgo::gg_bbox(data_CT) +
   theme_void() +
   theme(legend.position = "bottom")
 
+fig_2_points <- 
+  data_building |> 
+  left_join(
+    data_CT_clusters |> 
+      st_drop_geometry() |> 
+      select(GeoUID, cluster), by = "GeoUID") |> 
+  filter(!is.na(cluster)) |> 
+  ggplot() +
+  geom_sf(data = province, colour = "transparent", fill = "grey93") +
+  geom_sf(aes(fill = cluster, colour = cluster), lwd = 0.01) +
+  scale_fill_manual(name = NULL, values = col_palette[c(1, 3, 4, 2, 5)],
+                    guide = NULL) +
+  scale_colour_manual(name = NULL, values = col_palette[c(1, 3, 4, 2, 5)],
+                      guide = NULL) +
+  # guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
+  upgo::gg_bbox(data_CT) +
+  theme_void() +
+  theme(legend.position = "bottom")
 
+fig_2 <- fig_2_poly + fig_2_points + guide_area() + 
+  plot_layout(design = fig_1_layout, guides = "collect") +
+  theme(legend.position = "bottom")
 
-
-
-
+ggsave("output/figure_2.pdf", plot = fig_2, width = 8, height = 5, units = "in", 
+       useDingbats = FALSE)
 

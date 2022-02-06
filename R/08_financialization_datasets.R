@@ -8,13 +8,14 @@ qload("output/geometry.qsm", nthreads = availableCores())
 # Join LL data to CTs -----------------------------------------------------
 
 LL_CT <- 
-  LL_sf_centroid |> 
+  LL_sf |> 
   filter(number_rental_units > 0) |> 
   st_intersection(CT) |> 
   mutate(across(c(publicly_traded, direct_involvement_FM, financial_partners),
                 coalesce, FALSE)) |> 
   mutate(fin = as.logical(publicly_traded + direct_involvement_FM + 
-                            financial_partners))
+                            financial_partners)) |> 
+  st_set_geometry("geometry")
 
 LL_CT_summary <- 
   LL_CT |> 
