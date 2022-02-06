@@ -1,4 +1,4 @@
-#### 04 BASIC DESCRIPTIVE ANALYSIS ########################################
+#### 08 BASIC DESCRIPTIVE ANALYSIS #############################################
 
 source("R/01_startup.R")
 qload("output/LL.qsm", nthreads = availableCores())
@@ -152,62 +152,7 @@ top_landlords <-
 write_csv(top_landlords, "data/top_landlords.csv")
 
 
-# Percentage of financialized ownership -------------------
 
-proportion_financialized <- 
-  LL_sf_centroid %>% 
-  filter(!is.na(number_rental_units)) %>% 
-  filter(number_rental_units > 0) %>% 
-  mutate(financialized = publicly_traded+direct_involvement_FM+financial_partners) %>% 
-  mutate(financialized = ifelse(financialized > 0, TRUE, FALSE)) %>% 
-  st_intersection(., CT) %>% 
-  st_drop_geometry() %>% 
-  group_by(GeoUID, financialized) %>% 
-  summarize(rental_units=sum(number_rental_units))
-
-percentage_financialized <- 
-  proportion_financialized %>% 
-  group_by(GeoUID) %>% 
-  summarise(total=sum(rental_units, na.rm=TRUE)) %>% 
-  full_join(., proportion_financialized, by="GeoUID") %>% 
-  mutate(p_financialized=rental_units/total) %>% 
-  filter(financialized == TRUE) %>% 
-  select(GeoUID, p_financialized)
-
-financialized_ownership <- 
-  CT %>% 
-  left_join(., percentage_financialized, by="GeoUID") %>% 
-  mutate(p_financialized=ifelse(is.na(p_financialized), 0, p_financialized)) %>% 
-  ggplot()+
-  geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(aes(fill=p_financialized), color=NA)+
-  geom_rect(xmin = 607000, ymin = 5038000, xmax = 614000, ymax = 5045000,
-            fill = NA, colour = "black", size = 0.3)+
-  scale_fill_stepsn(name="Percentage of\nfinancialized\nrental\nownership", 
-                    colors = col_palette[c(4, 1, 2, 9)],
-                    breaks = c(0.1, 0.20, 0.40, 0.60),
-                    #values = c(0.2, 0.4, 0.6),
-                    na.value = "grey80",
-                    limits = c(0, 0.75), oob = scales::squish, 
-                    labels = scales::percent)+
-  gg_bbox(boroughs) +
-  theme_void()
-
-fo_zoom <- 
-  financialized_ownership +
-  geom_sf(data = streets_downtown, size = 0.3, colour = "white") +
-  coord_sf(xlim = c(607000, 614000), ylim = c(5038000, 5045000),
-           expand = FALSE) +
-  theme(legend.position = "none",
-        panel.border = element_rect(fill = NA, colour = "black", size = 0.6))
-
-inset_financialized_ownership <- 
-  financialized_ownership + 
-  inset_element(fo_zoom, left = 0, bottom = 0.5, right = 0.6, top = 1)
-
-
-ggsave("output/figures/inset_financialized_ownership.pdf", plot = inset_financialized_ownership, width = 8, 
-       height = 5, units = "in", useDingbats = FALSE)
 
 
 # Acquisitions made by current financialized landlords in Montreal by ------

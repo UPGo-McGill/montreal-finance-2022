@@ -2,6 +2,7 @@
 
 source("R/01_startup.R")
 library(cancensus)
+library(osmdata)
 
 # This script requires `montreal_boroughs_2019.shp` to be present in
 # `data/shapefiles`.
@@ -171,8 +172,44 @@ boroughs <-
   relocate(borough)
 
 
+# Streets -----------------------------------------------------------------
+
+streets <- 
+  (getbb("Région administrative de Montréal") * c(1.01, 0.99, 0.99, 1.01)) |> 
+  opq(timeout = 200) |> 
+  add_osm_feature(key = "highway") |> 
+  osmdata_sf()
+
+streets <-
+  rbind(
+    streets$osm_polygons |> st_set_agr("constant") |> st_cast("LINESTRING"), 
+    streets$osm_lines) |>
+  as_tibble() |> 
+  st_as_sf() |> 
+  st_transform(32618) |> 
+  st_set_agr("constant")
+
+streets <- 
+  streets |> 
+  filter(highway %in% c("primary", "secondary")) |>  
+  select(osm_id, name, highway, geometry)
+
+downtown_poly <- 
+  st_polygon(list(matrix(c(607000, 5038000,
+                           614000, 5038000,
+                           614000, 5045000,
+                           607000, 5045000,
+                           607000, 5038000), 
+                         ncol = 2, byrow = TRUE))) |> 
+  st_sfc(crs = 32618)
+
+streets_downtown <- 
+  streets |> 
+  st_intersection(downtown_poly)
+
+
 # Save output and clean up ------------------------------------------------
 
-qsavem(boroughs, CT, CT_06, province, file = "output/geometry.qsm",
-       nthreads = availableCores())
-rm(boroughs_raw, DA, downtown)
+qsavem(boroughs, CT, CT_06, province, streets_downtown,
+       file = "output/geometry.qsm", nthreads = availableCores())
+rm(boroughs_raw, DA, downtown, downtown_poly, streets)
