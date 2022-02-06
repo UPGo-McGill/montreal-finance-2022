@@ -104,8 +104,13 @@ LL_sf <-
              by = "numero_matricule") |> 
   st_as_sf()
 
+uef <- 
+  uef |> 
+  st_filter(CT) |> 
+  summarize()
 
-# 2020 asking rents -------------------------------------------------------------
+
+# 2020 asking rents -------------------------------------------------------
 
 ltr <- 
   qread("data/ltr_processed.qs", nthreads = availableCores()) |> 
@@ -134,7 +139,7 @@ CT <-
 
 qsavem(LL_2020, LL_analyzed, LL_sf, file = "output/LL.qsm",
        nthreads = availableCores())
-qsavem(boroughs, CT, CT_06, province, streets_downtown, 
+qsavem(boroughs, CT, CT_06, province, streets_downtown, uef,
        file = "output/geometry.qsm", nthreads = availableCores())
 
 rm(asking_rents, individuals_landlords, ltr, non_fz_PM_landlords,

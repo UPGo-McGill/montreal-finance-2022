@@ -118,9 +118,12 @@ fig_2_points <-
       st_drop_geometry() |> 
       select(GeoUID, cluster), by = "GeoUID") |> 
   filter(!is.na(cluster)) |> 
+  group_by(cluster) |> 
+  summarize() |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(aes(fill = cluster, colour = cluster), lwd = 0.01) +
+  geom_sf(data = uef, fill = "grey85", colour = "transparent") +
+  geom_sf(aes(fill = cluster, colour = cluster), lwd = 0.05) +
   scale_fill_manual(name = NULL, values = col_palette[c(1, 3, 4, 2, 5)],
                     guide = NULL) +
   scale_colour_manual(name = NULL, values = col_palette[c(1, 3, 4, 2, 5)],
@@ -132,7 +135,8 @@ fig_2_points <-
 
 fig_2 <- fig_2_poly + fig_2_points + guide_area() + 
   plot_layout(design = fig_1_layout, guides = "collect") +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") + 
+  plot_annotation(tag_levels = "A") 
 
 ggsave("output/figure_2.pdf", plot = fig_2, width = 8, height = 5, units = "in", 
        useDingbats = FALSE)
