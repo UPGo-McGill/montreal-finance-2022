@@ -38,219 +38,32 @@ data_kmeans |>
 
 k_result <- kmeans(data_kmeans, centers = 5, nstart = 25)
 qsave(k_result, file = "output/k_result.qs")
-
-
-# Visualize the clusters --------------------------------------------------
-
 fviz_cluster(k_result, data = data_kmeans)
 
 
-  theme_minimal()
+# Add to data -------------------------------------------------------------
 
-ggplot(data_kmeans)
+data_CT <- 
+  data_CT |> 
+  na.omit() |> 
+  mutate(cluster = k_result$cluster,
+         cluster = case_when(
+           cluster == 1 ~ "Suburban non-financialized",
+           cluster == 2 ~ "Immigrant periphery non-financialized",
+           cluster == 3 ~ "Precarious and student financialized",
+           cluster == 4 ~ "Gentrifying non-financialized",
+           cluster == 5 ~ "Affluent financialized"), 
+         cluster = factor(cluster, levels = c(
+           "Precarious and student financialized", "Affluent financialized",
+           "Suburban non-financialized", "Gentrifying non-financialized",
+           "Immigrant periphery non-financialized")), .before = geometry)
 
-clusters <- k2$cluster
+data_building <- 
+  data_building |> 
+  left_join(data_CT |> 
+              st_drop_geometry() |> 
+              select(GeoUID, cluster), by = "GeoUID")
 
-points_five <- 
-  kmeans_CT %>% 
-  left_join(., CT_parent_vectors, by = "GeoUID") %>% 
-  na.omit() %>% 
-  mutate(clusters = clusters_test2) %>% 
-  #left_join(., CT %>% select("GeoUID"), by="GeoUID") %>% 
-  st_as_sf() %>% 
-  mutate(parent_renter_ten = parent_renter/50) %>% 
-  st_sample(., size=.$parent_renter_ten, type="random", by_polygon = TRUE)
-
-clusters_points <- 
-  kmeans_CT %>% 
-  na.omit() %>% 
-  mutate(clusters = clusters_test2) %>% 
-  left_join(., CT %>% select("GeoUID"), by="GeoUID") %>% 
-  st_as_sf() %>% 
-  st_intersection(., points_five) %>% 
-  ggplot()+
-  geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(aes(color=as.character(clusters)), size=0.08, alpha = 0.8)+
-  scale_color_manual(name="Clusters",
-                     values=col_palette[c(1,3,4,2,5)])+
-  guides(colour = guide_legend(override.aes = list(size=4)))+
-  gg_bbox(CT) +
-  theme_void()
-
-clusters_CT <- 
-  kmeans_CT %>% 
-  na.omit() %>% 
-  mutate(clusters = clusters_test2) %>% 
-  left_join(., CT, by="GeoUID") %>% 
-  st_as_sf() %>% 
-  ggplot()+
-  geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(aes(fill=as.character(clusters)), color=NA)+
-  scale_fill_manual(name="Clusters",
-                    values=col_palette[c(1,3,4,2,5)])+
-  gg_bbox(CT) +
-  theme_void()
-
-library(patchwork)
-
-clusters_maps <- clusters_CT + clusters_points + plot_layout(ncol = 2) & 
-  theme(legend.position = "bottom")
-
-ggsave("output/figures/clusters_maps.pdf", plot = clusters_maps, width = 8, 
-       height = 5, units = "in", useDingbats = FALSE)
-
-# kmeans_CT %>% 
-#   na.omit() %>% 
-#   mutate(clusters = clusters_test2) %>% 
-#   group_by(clusters) %>% 
-#   summarize(p_financialized = mean(p_financialized, na.rm=TRUE),
-#             p_thirty_renter = mean(p_thirty_renter, na.rm=TRUE),
-#             median_rent = mean(median_rent, na.rm=TRUE),
-#             p_condo = mean(p_condo, na.rm=TRUE),
-#             p_renter = mean(p_renter, na.rm=TRUE),
-#             p_repairs = mean(p_repairs, na.rm=TRUE),
-#             p_vm = mean(p_vm, na.rm=TRUE),
-#             p_immigrants = mean(p_immigrants, na.rm=TRUE),
-#             p_mobility_one_year = mean(p_mobility_one_year, na.rm=TRUE),
-#             p_mobility_five_years = mean(p_mobility_five_years, na.rm=TRUE),
-#             d_downtown = mean(distance_dt, na.rm=TRUE),
-#             asking_rent = mean(asking_rent, na.rm=TRUE,),
-#             change_renter_dwellings = mean(change_renter_dwellings, na.rm=TRUE),
-#             average_value_dwellings = mean(average_value_dwellings, na.rm = TRUE),
-#             p_five_storeys = mean(p_five_more_storeys, na.rm = TRUE),
-#             med_hh_income = mean(med_hh_income, na.rm = TRUE),
-#             p_18_24 = mean(p_18_24, na.rm = TRUE)) %>% 
-#   View()
-
-# mean(kmeans_CT$p_financialized)
-# mean(kmeans_CT$p_thirty_renter, na.rm=TRUE)
-# mean(kmeans_CT$median_rent, na.rm=TRUE)
-# mean(kmeans_CT$p_condo, na.rm=TRUE)
-# mean(kmeans_CT$p_renter, na.rm=TRUE)
-# mean(kmeans_CT$p_repairs, na.rm=TRUE)
-# mean(kmeans_CT$p_vm, na.rm=TRUE)
-# mean(kmeans_CT$p_immigrants, na.rm=TRUE)
-# mean(kmeans_CT$p_mobility_one_year, na.rm=TRUE)
-# mean(kmeans_CT$p_mobility_five_years, na.rm=TRUE)
-# mean(kmeans_CT$d_downtown, na.rm=TRUE)
-# mean(kmeans_CT$asking_rent, na.rm=TRUE)
-# mean(kmeans_CT$asking_rent, na.rm=TRUE)
-# mean(kmeans_CT$change_renter_dwellings, na.rm=TRUE)
-# mean(kmeans_CT$average_value_dwellings, na.rm=TRUE)
-# mean(kmeans_CT$med_hh_income, na.rm = TRUE)
-# mean(kmeans_CT$p_five_more_storeys, na.rm = TRUE)
-# mean(kmeans_CT$pp_18_24, na.rm = TRUE)
-
-# Compute weighted means instead of straight means -------------------
-
-CT_parent_vectors <- 
-  cancensus::get_census(
-    dataset = "CA16", regions = list(CSD = c("2466023")), level = "CT",
-    vectors = c("v_CA16_4897", "v_CA16_4840", "v_CA16_4836", "v_CA16_4870", 
-                "v_CA16_3954", "v_CA16_3405", "v_CA16_6692", "v_CA16_6719",
-                "v_CA16_4890", "v_CA16_408", "v_CA16_2396", "v_CA16_1"),
-    geo_format = "sf") %>% 
-  st_transform(32618) %>% 
-  select(-c(Type, Households, `Adjusted Population (previous Census)`:CSD_UID, PR_UID:`Area (sq km)`)) %>% 
-  set_names(c("GeoUID", "dwellings", "parent_renter", "parent_repairs", "parent_owner",
-              "parent_condo", "parent_tenure", "parent_vm", "parent_immigrants", 
-              "parent_mobility_one_year", "parent_mobility_five_years",
-              "parent_dwellings", "parent_hh_income", "parent_age",
-              "geometry")) %>% 
-  select(-dwellings) %>% 
-  as_tibble() %>% 
-  st_as_sf(agr = "constant")
-
-kmeans_CT %>% 
-  left_join(., st_drop_geometry(CT_parent_vectors), by = "GeoUID") %>% 
-  na.omit() %>% 
-  mutate(clusters = clusters_test2) %>% 
-  group_by(clusters) %>% 
-  summarize(p_financialized = weighted.mean(p_financialized, parent_renter, na.rm=TRUE),
-            p_thirty_renter = weighted.mean(p_thirty_renter, parent_renter, na.rm=TRUE),
-            median_rent = weighted.mean(median_rent, parent_renter, na.rm=TRUE),
-            p_condo = weighted.mean(p_condo, parent_condo, na.rm=TRUE),
-            p_renter = weighted.mean(p_renter, parent_tenure, na.rm=TRUE),
-            p_repairs = weighted.mean(p_repairs, parent_repairs, na.rm=TRUE),
-            p_vm = weighted.mean(p_vm, parent_vm, na.rm=TRUE),
-            p_immigrants = weighted.mean(p_immigrants, parent_immigrants, na.rm=TRUE),
-            p_mobility_one_year = weighted.mean(p_mobility_one_year, parent_mobility_one_year, na.rm=TRUE),
-            p_mobility_five_years = weighted.mean(p_mobility_five_years, parent_mobility_five_years, na.rm=TRUE),
-            d_downtown = mean(distance_dt, na.rm=TRUE),
-            asking_rent = weighted.mean(asking_rent, parent_renter, na.rm=TRUE),
-            change_renter_dwellings = weighted.mean(change_renter_dwellings, parent_renter, na.rm=TRUE),
-            average_value_dwellings = weighted.mean(average_value_dwellings, parent_owner, na.rm = TRUE),
-            p_five_storeys = weighted.mean(p_five_more_storeys, parent_dwellings, na.rm = TRUE),
-            med_hh_income = weighted.mean(med_hh_income, parent_hh_income, na.rm = TRUE),
-            p_18_24 = weighted.mean(p_18_24, parent_age, na.rm = TRUE)) %>% 
-  View()
-
-kmeans_CT %>% 
-  left_join(., st_drop_geometry(CT_parent_vectors), by = "GeoUID") %>% 
-  na.omit() %>% 
-  mutate(group = 1) %>% 
-  group_by(group) %>% 
-  summarize(p_financialized = weighted.mean(p_financialized, parent_renter, na.rm=TRUE),
-            p_thirty_renter = weighted.mean(p_thirty_renter, parent_renter, na.rm=TRUE),
-            median_rent = weighted.mean(median_rent, parent_renter, na.rm=TRUE),
-            p_condo = weighted.mean(p_condo, parent_condo, na.rm=TRUE),
-            p_renter = weighted.mean(p_renter, parent_tenure, na.rm=TRUE),
-            p_repairs = weighted.mean(p_repairs, parent_repairs, na.rm=TRUE),
-            p_vm = weighted.mean(p_vm, parent_vm, na.rm=TRUE),
-            p_immigrants = weighted.mean(p_immigrants, parent_immigrants, na.rm=TRUE),
-            p_mobility_one_year = weighted.mean(p_mobility_one_year, parent_mobility_one_year, na.rm=TRUE),
-            p_mobility_five_years = weighted.mean(p_mobility_five_years, parent_mobility_five_years, na.rm=TRUE),
-            d_downtown = mean(distance_dt, na.rm=TRUE),
-            asking_rent = weighted.mean(asking_rent, parent_renter, na.rm=TRUE),
-            change_renter_dwellings = weighted.mean(change_renter_dwellings, parent_renter, na.rm=TRUE),
-            average_value_dwellings = weighted.mean(average_value_dwellings, parent_owner, na.rm = TRUE),
-            p_five_storeys = weighted.mean(p_five_more_storeys, parent_dwellings, na.rm = TRUE),
-            med_hh_income = weighted.mean(med_hh_income, parent_hh_income, na.rm = TRUE),
-            p_18_24 = weighted.mean(p_18_24, parent_age, na.rm = TRUE)) %>% 
-  View()
-
-write_csv(CT, "data/CT.csv")
-
-# Compute kmeans test 2 with four clusters --------------------------------------------------------
-
-# k2_four_clusters <- kmeans(kmeans_test2, centers = 4, nstart = 25)
-# 
-# clusters_test2_four <- k2_four_clusters$cluster
-# 
-# kmeans_CT %>% 
-#   na.omit() %>% 
-#   mutate(clusters = clusters_test2_four) %>% 
-#   left_join(., CT, by="GeoUID") %>% 
-#   st_as_sf() %>% 
-#   ggplot()+
-#   geom_sf(data = province, colour = "transparent", fill = "grey93") +
-#   geom_sf(aes(fill=as.character(clusters)), color=NA)+
-#   scale_fill_manual(values=col_palette[c(1:4)])+
-#   gg_bbox(CT) +
-#   theme_void()
-# 
-# kmeans_CT %>% 
-#   na.omit() %>% 
-#   mutate(clusters = clusters_test2_four) %>% 
-#   group_by(clusters) %>% 
-#   summarize(p_financialized = mean(p_financialized, na.rm=TRUE),
-#             p_thirty_renter = mean(p_thirty_renter, na.rm=TRUE),
-#             median_rent = mean(median_rent, na.rm=TRUE),
-#             p_condo = mean(p_condo, na.rm=TRUE),
-#             p_renter = mean(p_renter, na.rm=TRUE),
-#             p_repairs = mean(p_repairs, na.rm=TRUE),
-#             p_vm = mean(p_vm, na.rm=TRUE),
-#             p_immigrants = mean(p_immigrants, na.rm=TRUE),
-#             p_mobility_one_year = mean(p_mobility_one_year, na.rm=TRUE),
-#             p_mobility_five_years = mean(p_mobility_five_years, na.rm=TRUE),
-#             d_downtown = mean(distance_dt, na.rm=TRUE),
-#             asking_rent = mean(asking_rent, na.rm=TRUE,),
-#             change_renter_dwellings = mean(change_renter_dwellings, na.rm=TRUE),
-#             average_value_dwellings = mean(average_value_dwellings, na.rm = TRUE),
-#             p_five_storeys = mean(p_five_more_storeys, na.rm = TRUE),
-#             med_hh_income = mean(med_hh_income, na.rm = TRUE),
-#             p_18_24 = mean(p_18_24, na.rm = TRUE)) %>% 
-#   View()
 
 
 # Regression analyses -----------------------------------------------
