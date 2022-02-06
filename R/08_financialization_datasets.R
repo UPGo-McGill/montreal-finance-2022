@@ -29,7 +29,7 @@ LL_CT_summary <-
 
 # Assemble final datasets -------------------------------------------------
 
-dataset_CT <- 
+data_CT <- 
   CT |> 
   left_join(LL_CT_summary, by = "GeoUID") |> 
   mutate(p_financialized = coalesce(p_financialized, 0),
@@ -37,11 +37,11 @@ dataset_CT <-
   relocate(geometry, .after = p_financialized)
 
 LL_CT_to_join <- 
-  dataset_CT |> 
+  data_CT |> 
   st_drop_geometry() |> 
   select(GeoUID, n_financialized:p_financialized)
 
-dataset_building <- 
+data_building <- 
   LL_CT |> 
   left_join(LL_CT_to_join, by = "GeoUID") |> 
   relocate(geometry, .after = last_col())
@@ -49,7 +49,7 @@ dataset_building <-
 
 # Save output -------------------------------------------------------------
 
-qsavem(dataset_building, dataset_CT, file = "output/datasets.qsm", 
+qsavem(data_building, data_CT, file = "output/data.qsm", 
        nthreads = availableCores())
 
 rm(LL_CT, LL_CT_summary, LL_CT_to_join)
