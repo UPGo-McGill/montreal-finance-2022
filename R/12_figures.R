@@ -3,8 +3,9 @@
 source("R/01_startup.R")
 qload("output/data.qsm", nthreads = availableCores())
 qload("output/geometry.qsm", nthreads = availableCores())
-k_result <- qread("output/k_result.qs")
+qload("output/cluster.qsm", nthreads = availableCores())
 library(patchwork)
+library(ggpubr)
 
 
 # Figure 1. Percentage of financialized ownership -------------------------
@@ -79,13 +80,189 @@ fig_1 <- fig_1_map + fig_1_hist + guide_area() +
   plot_layout(design = fig_1_layout, guides = "collect") + 
   plot_annotation(tag_levels = "A") 
 
-ggsave("output/figure_1.pdf", plot = fig_1, width = 8, height = 5, units = "in", 
-       useDingbats = FALSE)
+ggsave("output/figures/figure_1.pdf", plot = fig_1, width = 8, height = 5, 
+       units = "in", useDingbats = FALSE)
 
 
-# Figure 2. Cluster map ---------------------------------------------------
+# Figure 2. Bivariate regressions -----------------------------------------
 
-fig_2_poly <-
+# Housing stress
+p1_cor <- 
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  st_drop_geometry() |> 
+  select(p_thirty_renter, p_financialized) |> 
+  cor() |> 
+  as_tibble() |> 
+  slice(1) |> 
+  pull(p_financialized)
+
+p1 <-
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  ggplot(aes(p_thirty_renter, p_financialized, 
+             size = parent_renter, alpha = parent_renter)) +
+  geom_point(color = col_palette[1]) +
+  geom_line(stat = "smooth", method = "lm", color = "black", alpha = p1_cor) +
+  scale_x_continuous(name = "Renters in housing stress",
+                     label = scales::percent) +
+  scale_y_continuous("Financialized rental units",
+                     label = scales::percent, limits = c(0, 1)) +
+  scale_size_continuous(range = c(1, 3), guide = "none") +
+  scale_alpha_continuous(guide = "none") +
+  theme_minimal() + 
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`, `~")),
+           label.x = 0, label.y = 0.875)
+
+# Median rent
+p2_cor <- 
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  st_drop_geometry() |> 
+  select(median_rent, p_financialized) |> 
+  cor() |> 
+  as_tibble() |> 
+  slice(1) |> 
+  pull(p_financialized)
+
+p2 <- 
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  ggplot(aes(median_rent, p_financialized, 
+             size = parent_renter, alpha = parent_renter)) +
+  geom_point(color = col_palette[2]) +
+  geom_line(stat = "smooth", method = "lm", color = "black", alpha = p2_cor) +
+  scale_x_continuous(name = "Median rent", label = scales::dollar) +
+  scale_y_continuous("Financialized rental units",
+                     label = scales::percent, limits = c(0, 1)) +
+  scale_size_continuous(range = c(1, 3), guide = "none") +
+  scale_alpha_continuous(guide = "none") +
+  theme_minimal() + 
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`, `~")),
+           label.x = 0, label.y = 0.875)
+
+# One-year mobility
+p3_cor <- 
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  st_drop_geometry() |> 
+  select(p_mobility_one_year, p_financialized) |> 
+  cor() |> 
+  as_tibble() |> 
+  slice(1) |> 
+  pull(p_financialized)
+
+p3 <- 
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  ggplot(aes(p_mobility_one_year, p_financialized, size = parent_renter, 
+             alpha = parent_renter)) +
+  geom_point(color = col_palette[3]) +
+  geom_line(stat = "smooth", method = "lm", color = "black", alpha = p3_cor) +
+  scale_x_continuous(name = "Households having moved in the past year",
+                     label = scales::percent) +
+  scale_y_continuous("Financialized rental units",
+                     label = scales::percent, limits = c(0, 1)) +
+  scale_size_continuous(range = c(1, 3), guide = "none") +
+  scale_alpha_continuous(guide = "none") +
+  theme_minimal() +
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`, `~")),
+           label.x = 0, label.y = 0.875)
+
+# Visible minorities
+p4_cor <- 
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  st_drop_geometry() |> 
+  select(p_vm, p_financialized) |> 
+  cor() |> 
+  as_tibble() |> 
+  slice(1) |> 
+  pull(p_financialized)
+
+p4 <-
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  ggplot(aes(p_vm, p_financialized, alpha = dwellings, size = dwellings)) +
+  geom_point(color = col_palette[5]) +
+  geom_line(stat = "smooth", method = "lm", color = "black", alpha = p4_cor) +
+  scale_x_continuous(name = "Visible minorities",
+                     label = scales::percent) +
+  scale_y_continuous("Financialized rental units",
+                     label = scales::percent, limits = c(0, 1)) +
+  scale_size_continuous(range = c(1, 3), guide = "none") +
+  scale_alpha_continuous(guide = "none") +
+  theme_minimal() + 
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`, `~")),
+           label.x = 0, label.y = 0.875)
+
+
+# Five+ stories
+p5_cor <- 
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  st_drop_geometry() |> 
+  select(p_five_more_storeys, p_financialized) |> 
+  cor() |> 
+  as_tibble() |> 
+  slice(1) |> 
+  pull(p_financialized)
+
+p5 <-
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  ggplot(aes(p_five_more_storeys, 
+             p_financialized, alpha = parent_renter, size = parent_renter)) +
+  geom_point(color = col_palette[7]) +
+  geom_line(stat = "smooth", method = "lm", color = "black", alpha = p5_cor) +
+  scale_x_continuous(name = "Households in 5+ storey buildings", 
+                     label = scales::dollar) +
+  scale_y_continuous("Financialized rental units",
+                     label = scales::percent, limits = c(0, 1)) +
+  scale_size_continuous(range = c(1, 3), guide = "none") +
+  scale_alpha_continuous(guide = "none") +
+  theme_minimal() + 
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
+           label.x = 0, label.y = 0.875)
+
+# 18-24 year olds
+p6_cor <- 
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  st_drop_geometry() |> 
+  select(p_18_24, p_financialized) |> 
+  cor() |> 
+  as_tibble() |> 
+  slice(1) |> 
+  pull(p_financialized)
+
+p6 <-
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  ggplot(aes(p_18_24,
+             p_financialized, alpha = parent_renter, size = parent_renter)) +
+  geom_point(color = col_palette[9]) +
+  geom_line(stat = "smooth", method = "lm", color = "black", alpha = p6_cor) +
+  scale_x_continuous(name = "Population aged 18-24",
+                     label = scales::percent) +
+  scale_y_continuous("Financialized rental units",
+                     label = scales::percent, limits = c(0, 1)) +
+  scale_size_continuous(range = c(1, 3), guide = "none") +
+  scale_alpha_continuous(guide = "none") +
+  theme_minimal() + 
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`, `~")),
+           label.x = 0, label.y = 0.875)
+
+fig_2 <- p1 + p2 + p3 + p4 + p5 + p6
+
+ggsave("output/figures/figure_2.pdf", plot = fig_2, width = 12, 
+       height = 8, units = "in", useDingbats = FALSE)
+
+
+
+# Figure 4. Cluster map ---------------------------------------------------
+
+fig_4_poly <-
   data_CT |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
@@ -96,7 +273,7 @@ fig_2_poly <-
   theme_void() +
   theme(legend.position = "bottom")
 
-fig_2_points <- 
+fig_4_points <- 
   data_building |> 
   left_join(
     data_CT_clusters |> 
@@ -118,12 +295,12 @@ fig_2_points <-
   theme_void() +
   theme(legend.position = "bottom")
 
-fig_2 <- fig_2_poly + fig_2_points + guide_area() + 
+fig_4 <- fig_4_poly + fig_4_points + guide_area() + 
   plot_layout(design = fig_1_layout, guides = "collect") +
   theme(legend.position = "bottom") + 
   plot_annotation(tag_levels = "A") 
 
-ggsave("output/figure_2.pdf", plot = fig_2, width = 8, height = 5, units = "in", 
+ggsave("output/figure_4.pdf", plot = fig_4, width = 8, height = 5, units = "in", 
        useDingbats = FALSE)
 
 
@@ -132,69 +309,8 @@ ggsave("output/figure_2.pdf", plot = fig_2, width = 8, height = 5, units = "in",
 
 # Compute weighted means instead of straight means -------------------
 
-CT_parent_vectors <- 
-  cancensus::get_census(
-    dataset = "CA16", regions = list(CSD = c("2466023")), level = "CT",
-    vectors = c("v_CA16_4897", "v_CA16_4840", "v_CA16_4836", "v_CA16_4870", 
-                "v_CA16_3954", "v_CA16_3405", "v_CA16_6692", "v_CA16_6719",
-                "v_CA16_4890", "v_CA16_408", "v_CA16_2396", "v_CA16_1"),
-    geo_format = "sf") |> 
-  st_transform(32618) |> 
-  select(-c(Type, Households, `Adjusted Population (previous Census)`:CSD_UID, 
-            PR_UID:`Area (sq km)`)) |> 
-  set_names(c("GeoUID", "dwellings", "parent_renter", "parent_repairs", 
-              "parent_owner", "parent_condo", "parent_tenure", "parent_vm", 
-              "parent_immigrants", "parent_mobility_one_year", 
-              "parent_mobility_five_years", "parent_dwellings", 
-              "parent_hh_income", "parent_age", "geometry")) |> 
-  select(-dwellings) |> 
-  as_tibble() |> 
-  st_as_sf(agr = "constant")
 
-data_CT |> 
-  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
-  na.omit() |> 
-  mutate(cluster = k_result$cluster) |> 
-  mutate(cluster = case_when(
-    cluster == 1 ~ "Suburban non-financialized",
-    cluster == 2 ~ "Immigrant periphery non-financialized",
-    cluster == 3 ~ "Precarious and student financialized",
-    cluster == 4 ~ "Gentrifying non-financialized",
-    cluster == 5 ~ "Affluent financialized")) |> 
-  mutate(cluster = factor(cluster, levels = c(
-    "Precarious and student financialized", "Affluent financialized",
-    "Suburban non-financialized", "Gentrifying non-financialized",
-    "Immigrant periphery non-financialized"))) |> 
-  group_by(cluster) |> 
-  summarize(p_financialized = weighted.mean(p_financialized, parent_renter, 
-                                            na.rm = TRUE),
-            p_thirty_renter = weighted.mean(p_thirty_renter, parent_renter, 
-                                            na.rm = TRUE),
-            median_rent = weighted.mean(median_rent, parent_renter, 
-                                        na.rm = TRUE),
-            p_condo = weighted.mean(p_condo, parent_condo, na.rm = TRUE),
-            p_renter = weighted.mean(p_renter, parent_tenure, na.rm = TRUE),
-            p_repairs = weighted.mean(p_repairs, parent_repairs, na.rm = TRUE),
-            p_vm = weighted.mean(p_vm, parent_vm, na.rm = TRUE),
-            p_immigrants = weighted.mean(p_immigrants, parent_immigrants, 
-                                         na.rm = TRUE),
-            p_mobility_one_year = weighted.mean(
-              p_mobility_one_year, parent_mobility_one_year, na.rm = TRUE),
-            p_mobility_five_years = weighted.mean(
-              p_mobility_five_years, parent_mobility_five_years, na.rm = TRUE),
-            d_downtown = mean(distance_dt, na.rm = TRUE),
-            asking_rent = weighted.mean(asking_rent, parent_renter, 
-                                        na.rm = TRUE),
-            change_renter_dwellings = weighted.mean(
-              change_renter_dwellings, parent_renter, na.rm = TRUE),
-            average_value_dwellings = weighted.mean(
-              average_value_dwellings, parent_owner, na.rm = TRUE),
-            p_five_storeys = weighted.mean(p_five_more_storeys, 
-                                           parent_dwellings, na.rm = TRUE),
-            med_hh_income = weighted.mean(med_hh_income, parent_hh_income, 
-                                          na.rm = TRUE),
-            p_18_24 = weighted.mean(p_18_24, parent_age, na.rm = TRUE)) |> 
-  st_drop_geometry() |> 
+ |> 
   mutate(across(starts_with("p_"), scales::percent, 0.1),
          median_rent = scales::dollar(median_rent, 1))
 
@@ -203,25 +319,34 @@ kmeans_CT %>%
   na.omit() %>% 
   mutate(group = 1) %>% 
   group_by(group) %>% 
-  summarize(p_financialized = weighted.mean(p_financialized, parent_renter, na.rm=TRUE),
-            p_thirty_renter = weighted.mean(p_thirty_renter, parent_renter, na.rm=TRUE),
-            median_rent = weighted.mean(median_rent, parent_renter, na.rm=TRUE),
+  summarize(p_financialized = weighted.mean(p_financialized, parent_renter, 
+                                            na.rm=TRUE),
+            p_thirty_renter = weighted.mean(p_thirty_renter, parent_renter, 
+                                            na.rm=TRUE),
+            median_rent = weighted.mean(median_rent, parent_renter, 
+                                        na.rm=TRUE),
             p_condo = weighted.mean(p_condo, parent_condo, na.rm=TRUE),
             p_renter = weighted.mean(p_renter, parent_tenure, na.rm=TRUE),
             p_repairs = weighted.mean(p_repairs, parent_repairs, na.rm=TRUE),
             p_vm = weighted.mean(p_vm, parent_vm, na.rm=TRUE),
-            p_immigrants = weighted.mean(p_immigrants, parent_immigrants, na.rm=TRUE),
-            p_mobility_one_year = weighted.mean(p_mobility_one_year, parent_mobility_one_year, na.rm=TRUE),
-            p_mobility_five_years = weighted.mean(p_mobility_five_years, parent_mobility_five_years, na.rm=TRUE),
+            p_immigrants = weighted.mean(p_immigrants, parent_immigrants, 
+                                         na.rm=TRUE),
+            p_mobility_one_year = weighted.mean(
+              p_mobility_one_year, parent_mobility_one_year, na.rm=TRUE),
+            p_mobility_five_years = weighted.mean(
+              p_mobility_five_years, parent_mobility_five_years, na.rm=TRUE),
             d_downtown = mean(distance_dt, na.rm=TRUE),
-            asking_rent = weighted.mean(asking_rent, parent_renter, na.rm=TRUE),
-            change_renter_dwellings = weighted.mean(change_renter_dwellings, parent_renter, na.rm=TRUE),
-            average_value_dwellings = weighted.mean(average_value_dwellings, parent_owner, na.rm = TRUE),
-            p_five_storeys = weighted.mean(p_five_more_storeys, parent_dwellings, na.rm = TRUE),
-            med_hh_income = weighted.mean(med_hh_income, parent_hh_income, na.rm = TRUE),
+            asking_rent = weighted.mean(asking_rent, parent_renter,
+                                        na.rm=TRUE),
+            change_renter_dwellings = weighted.mean(
+              change_renter_dwellings, parent_renter, na.rm=TRUE),
+            average_value_dwellings = weighted.mean(
+              average_value_dwellings, parent_owner, na.rm = TRUE),
+            p_five_storeys = weighted.mean(p_five_more_storeys, 
+                                           parent_dwellings, na.rm = TRUE),
+            med_hh_income = weighted.mean(med_hh_income, parent_hh_income, 
+                                          na.rm = TRUE),
             p_18_24 = weighted.mean(p_18_24, parent_age, na.rm = TRUE)) %>% 
   View()
-
-write_csv(CT, "data/CT.csv")
 
 
