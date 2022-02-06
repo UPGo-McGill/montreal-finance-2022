@@ -1,4 +1,4 @@
-#### 06 BIG CHUNK ANALYSIS ########################################
+#### 10 CLUSTER ANALYSIS #######################################################
 
 library(cluster)
 library(factoextra)
@@ -7,50 +7,11 @@ library(ggpubr)
 
 # Do the kmeans with the CT dataset -----------------------------------
 
-kmeans_table <- 
-  CT %>% 
-  select(-dwellings)
-
-# Old code for kmeans ------------------------------------
-
-# rentals_montreal <- 
-#   LL_sf_centroid %>% 
-#   filter(!is.na(number_rental_units)) %>% 
-#   filter(number_rental_units > 0) %>% 
-#   select(numero_matricule, landlord_name, type, company_type, financialized, number_rental_units)
-# 
-# kmeans_table <- 
-#   st_join(kmeans_table, rentals_montreal)
-
-# p_corporate_owned <- 
-#   kmeans_table %>%
-#   st_drop_geometry() %>% 
-#   group_by(GeoUID, landlord_type) %>% 
-#   summarize(type_units = sum(nombre_logements, na.rm=TRUE)) 
-# 
-# total_type <- 
-#   p_corporate_owned %>% 
-#   group_by(GeoUID) %>% 
-#   summarize(rental_units = sum(type_units))
-# 
-# p_corporate_owned <- 
-#   p_corporate_owned %>% 
-#   left_join(., total_type, by="GeoUID") %>% 
-#   mutate(percent_type_owned = type_units/rental_units) %>% 
-#   filter(landlord_type == "Private") %>% 
-#   rename(p_financialized = percent_type_owned) %>% 
-#   select(GeoUID, p_financialized)
-
-# kmeans_table <- 
-#   kmeans_table %>% 
-#   full_join(., p_corporate_owned, by="GeoUID") %>% 
-#   mutate(p_financialized = ifelse(is.na(p_financialized), 0, p_financialized))
-
 kmeans_CT <- 
-  CT %>% 
-  st_drop_geometry() %>% 
-  left_join(., percentage_financialized, by = "GeoUID") %>% 
-  mutate(p_financialized = ifelse(is.na(p_financialized), 0, p_financialized))
+  CT |> 
+  st_drop_geometry() |> 
+  left_join(percentage_financialized, by = "GeoUID") |> 
+  mutate(p_financialized = coalesce(p_financialized, 0))
 
 
 #kmeans_table %>% 

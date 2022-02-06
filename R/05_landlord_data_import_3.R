@@ -9,7 +9,9 @@ qload("output/LL.qsm", nthreads = availableCores())
 
 # Import landlord analysis once it has been conducted in Excel ------------
 
-landlord_analysis <- readxl::read_xlsx("data/landlords.xlsx")
+landlord_analysis <- 
+  readxl::read_xlsx("data/landlords.xlsx") |> 
+  mutate(type = if_else(type == "Nonprofit", "Non-profit", type))
 
 
 # Combine landlord information with postal addresses ----------------------

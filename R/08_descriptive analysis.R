@@ -2,6 +2,7 @@
 
 source("R/01_startup.R")
 qload("output/LL.qsm", nthreads = availableCores())
+qload("output/geometry.qsm", nthreads = availableCores())
 
 
 # Number of properties built by year of construction ----------------------
@@ -131,8 +132,8 @@ rental_type <-
   scale_x_discrete(name=NULL) +
   theme_minimal()
 
-ggsave("output/figures/rental_type.pdf", plot = rental_type, width = 8, 
-       height = 5, units = "in", useDingbats = FALSE)
+# ggsave("output/figures/rental_type.pdf", plot = rental_type, width = 8, 
+#        height = 5, units = "in", useDingbats = FALSE)
 
 
 # Landlord ownership table -------------------
@@ -149,33 +150,6 @@ top_landlords <-
   distinct(landlord_name, .keep_all=TRUE)
 
 write_csv(top_landlords, "data/top_landlords.csv")
-
-
-# Top50 landlords and geographic repartition -------------------
-
-# top50 <- 
-#   LL_analyzed %>% 
-#   group_by(landlord_name) %>% 
-#   summarize(rentals=sum(number_rental_units, na.rm = TRUE)) %>% 
-#   arrange(desc(rentals)) %>% 
-#   slice(1:50) %>% 
-#   pull(landlord_name)
-# 
-# top50_map <- 
-#   LL_sf_centroid %>% 
-#   filter(landlord_name %in% top50) %>% 
-#   mutate(type = ifelse(company_type=="REIT", "REIT", type)) %>% 
-#   ggplot()+
-#   geom_sf(data = boroughs, fill=NA, color="grey80")+
-#   geom_sf(aes(color=type, size=number_rental_units))+
-#   facet_wrap(~type)+
-#   scale_colour_manual(name = "Landlord type", values = col_palette[c(1, 6, 3, 4, 2, 5)])+
-#   scale_size_continuous(name = "Number of rental units", limits = c(1, 3200), 
-#                         breaks = c(25, 50, 100, 300))+
-#   theme_void()
-# 
-# ggsave("output/figures/top50_map.pdf", plot = top50_map, width = 8, 
-#        height = 5, units = "in", useDingbats = FALSE)
 
 
 # Percentage of financialized ownership -------------------
@@ -326,3 +300,10 @@ new_c_fz <-
 ggsave("output/figures/new_c_fz.pdf", plot = new_c_fz, width = 8, 
        height = 5, units = "in", useDingbats = FALSE)
 
+
+# Save output -------------------------------------------------------------
+
+qsavem(percentage_financialized, file = "output/descriptives.qsm",
+       nthreads = availableCores())
+
+rm()

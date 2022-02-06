@@ -136,14 +136,15 @@ CT <-
   group_by(GeoUID) |> 
   summarize(asking_rent = mean(price, na.rm = TRUE)) |> 
   right_join(CT, by = "GeoUID") |> 
-  relocate(distance_dt, asking_rent, .before = geometry)
+  relocate(distance_dt, asking_rent, .before = geometry) |> 
+  st_as_sf()
 
 
 # Save output -------------------------------------------------------------
 
 qsavem(LL_2020, LL_analyzed, LL_sf_centroid, file = "output/LL.qsm",
        nthreads = availableCores())
-qsavem(CT, CT_06, province, file = "output/geometry.qsm",
+qsavem(boroughs, CT, CT_06, province, file = "output/geometry.qsm",
        nthreads = availableCores())
 
 rm(asking_rents, individuals_landlords, LL_sf, ltr, non_fz_PM_landlords,

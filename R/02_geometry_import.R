@@ -173,6 +173,6 @@ boroughs <-
 
 # Save output and clean up ------------------------------------------------
 
-qsavem(CT, CT_06, province, file = "output/geometry.qsm",
+qsavem(boroughs, CT, CT_06, province, file = "output/geometry.qsm",
        nthreads = availableCores())
 rm(boroughs_raw, DA, downtown)
