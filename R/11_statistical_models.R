@@ -14,22 +14,23 @@ library(tidyr)
 
 options(scipen=999)
 
+
+
 # Load data --------------------------------------------------------------------
+
+ct_with_units <- qs::qread("data/CT_with_units.qs")
 
 p <- 
   kmeans_CT %>% 
-  left_join(., CT %>% select(GeoUID), by = "GeoUID") %>% 
+  left_join(., ct_with_units %>% dplyr::select(GeoUID, total), by = "GeoUID") %>% 
   st_as_sf()
 
+p_disaggregated <- qs::qread("data/buildings.qs") %>%
+  st_join(p, left=FALSE) %>%
+  dplyr::select(-ends_with("y"))
+
+
 # Preprocessing and Spatial weights --------------------------------------------
-
-queen.nb <- poly2nb(p) 
-rook.nb  <- poly2nb(p, queen=FALSE) 
-
-queen.listw <- nb2listw(queen.nb) 
-rook.listw  <- nb2listw(rook.nb) 
-listw1 <-  queen.listw
-
 
 p_model <- p %>%
   dplyr::select(p_financialized, 
@@ -38,22 +39,67 @@ p_model <- p %>%
          p_mobility_one_year, 
          p_vm,
          p_five_more_storeys,
-         p_18_24) %>%
-  mutate(n_median_rent = stdize(p$median_rent, na.rm=TRUE),
-         log_financialized = ifelse(p_model$p_financialized == 0, 
-                                    p_model$p_financialized, 
+         p_18_24,
+         total) %>%
+  mutate(n_median_rent = stdize(median_rent, na.rm=TRUE),
+         log_financialized = ifelse(p_financialized == 0, 
+                                    p_financialized, 
                                     log(p_model$p_financialized*100)),
-         log_18_24 = ifelse(p_model$p_18_24 == 0, 
-                                    p_model$p_18_24, 
-                                    log(p_model$p_18_24*100)))
+         log_18_24 = ifelse(p_18_24 == 0, 
+                            p_18_24, 
+                            log(p_18_24*100)),
+         log_five_more_storeys = ifelse(p_five_more_storeys == 0, 
+                                        p_five_more_storeys, 
+                                        log(p_five_more_storeys*100)),
+         logit_financialized =  ifelse(p_financialized == 0, 
+                                       p_financialized, 
+                                       (1/1-log(p_financialized*100))),
+         financialized_units = as.integer(round(p_financialized*total,0))) %>%
+  mutate(log_n_median_rent = ifelse(n_median_rent == 0, 
+                                    n_median_rent, 
+                                    log(n_median_rent*100)))
 
 p_model_f <- p_model %>%
-  filter(!is.na(p_18_24)) 
+  na.exclude() %>%
+  filter(!st_is_empty(.)) %>%
+  st_make_valid() %>%
+  filter(total != 0) %>%
+  filter(!row_number() %in% c(157,178,308))
+  
+p_model_f <-  rmapshaper::ms_filter_islands(p_model_f)
 
-queen.nonas <- poly2nb(p_model_f)
+distance.nb <- knn2nb(knearneigh(st_centroid(p_model_f), k=5))
+distance.listw <- nb2listw(distance.nb, zero.policy = TRUE) 
+listw.distance <-distance.listw
+w_mat_dist <- nb2mat(distance.nb, zero.policy = TRUE, style='W')
+
+queen.nonas <- poly2nb(as(p_model_f, 'Spatial'))
 queen.listw.nonas <- nb2listw(queen.nonas) 
 listw.nonas <-queen.listw.nonas
-nb2mat(queen.nonas)
+w_mat <- nb2mat(queen.nonas, style='B',zero.policy=TRUE)
+isSymmetric(w_mat,check.attributes=FALSE)
+
+# Exploratory Univariate Diagnostics -------------------------------------------
+
+ggplot(gather(dplyr::select(as.tibble(p_model_f), -geometry)), aes(value)) + 
+  geom_histogram(bins = 10) + 
+  facet_wrap(~key, scales = 'free_x')
+
+p_model_f %>%
+  as.tibble() %>%
+  dplyr::select(-geometry) %>%
+  gather(-p_financialized, key = "var", value = "value") %>% 
+  ggplot(aes(x = value, y = p_financialized)) +
+  geom_point() +
+  facet_wrap(~ var, scales = "free")
+
+p_model_f %>%
+  as.tibble() %>%
+  dplyr::select(-geometry) %>%
+  gather(-log_financialized, key = "var", value = "value") %>% 
+  ggplot(aes(x = value, y = log_financialized)) +
+  geom_point() +
+  facet_wrap(~ var, scales = "free")
 
 # Exploratory Spatial Diagnostics ----------------------------------------------
 
@@ -70,9 +116,10 @@ moran_tests
 
 # OLS Models -------------------------------------------------------------------
 
-reg.eq1 <- log_financialized ~ p_thirty_renter + n_median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + log_18_24
+reg.eq1 <- log_financialized ~ p_thirty_renter + n_median_rent + p_mobility_one_year + p_vm + log_five_more_storeys + log_18_24
 reg.eq2 <- p_financialized ~ p_thirty_renter + n_median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + p_18_24
 reg.eq3 <- p_financialized ~ p_thirty_renter + median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + p_18_24
+reg.eq4 <- logit_financialized ~ p_thirty_renter + n_median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + p_18_24
 
 reg1 <- lm(reg.eq1, data = p_model_f)
 summary(reg1)
@@ -91,6 +138,18 @@ p_model_f$reg2_fit <- reg2$fitted.values
 
 p_model_f$reg3_res <- reg3$residuals
 p_model_f$reg3_fit <- reg3$fitted.values
+
+reg4 <- lm(reg.eq4, data = p_model_f)
+summary(reg4)
+
+p_model_f$reg4_res <- reg4$residuals
+p_model_f$reg4_fit <- reg4$fitted.values
+
+p_model_f$reg4_res <- reg4$residuals
+p_model_f$reg4_fit <- reg4$fitted.values
+
+p_model_f$reg4_res <- reg4$residuals
+p_model_f$reg4_fit <- reg4$fitted.values
 
 # OLS Diagnostics --------------------------------------------------------------
 
@@ -145,7 +204,72 @@ ggplot(p_model_f, aes(row.names(p_model_f), reg3_res)) +
   geom_point(shape = 1) +
   geom_hline(yintercept = 0, color = "red")
 
-# Model Spatial Diagnostics ----------------------------------------------------
+dwtest(reg4)
+shapiro.test(p_model_f$reg4_res)
+ncvTest(reg4)
+qqnorm(p_model_f$reg4_res)
+qqline(p_model_f$reg4_res)
+hist(p_model_f$reg4_res)
+
+ggplot(p_model_f, aes(reg4_fit, reg4_res)) +
+  geom_jitter(shape = 1) +
+  geom_hline(yintercept = 0, color = "red") +
+  ylab("Residuals") +
+  xlab("Fitted")
+
+ggplot(p_model_f, aes(row.names(p_model_f), reg4_res)) +
+  geom_point(shape = 1) +
+  geom_hline(yintercept = 0, color = "red")
+
+# Logistic models --------------------------------------------------------------
+
+## Frequentist GLM -------------------------------------------------------------
+m_glm <- stats::glm(cbind(financialized_units, total) ~ p_thirty_renter + median_rent + p_mobility_one_year + 
+                      p_vm + p_five_more_storeys + p_18_24, data = p_model_f, family = binomial)
+m_glm
+
+## Bayesian GLM ----------------------------------------------------------------
+
+library(brms)
+stan_eq <- financialized_units | trials(total) ~ p_thirty_renter + median_rent + p_mobility_one_year + 
+  p_vm + p_five_more_storeys + p_18_24
+
+model_logistic_bayes <- brm(stan_eq, 
+                            data = p_model_f, 
+                            family = binomial(link = "logit"),
+                            warmup = 1000, 
+                            iter = 2000, 
+                            chains = 4, 
+                            inits = "0", 
+                            cores = 4,
+                            seed = 123)
+
+plot(model_logistic_bayes, combo = c("dens", "trace"))
+
+## Bayesian GLM with BYM2 priors -----------------------------------------------
+
+p_model_f$gr <- as.factor(seq.int(nrow(p_model_f)))
+stan_car_eq <- brmsformula(formula = stan_eq, 
+                           family = binomial(link = "logit"),
+                           autocor = ~ car(w, gr=gr,type = "bym2")) 
+
+stan_data2 = list(w=w_mat)
+model_logistic_bayes_bym <- brm(stan_car_eq, 
+                            data = p_model_f, 
+                            data2=stan_data2,
+                            warmup = 500, 
+                            iter = 2000, 
+                            chains = 4, 
+                            inits = "0", 
+                            cores = 4,
+                            seed = 123,
+                            control = list(max_treedepth = 20,
+                                           adapt_delta = 0.97, 
+                                           stepsize = 0.1))
+
+plot(model_logistic_bayes_icar, combo = c("dens", "trace"))
+
+# OLS Spatial Diagnostics ------------------------------------------------------
 
 lmMoranTest <- lm.morantest(reg1,listw.nonas)
 lmMoranTest
@@ -163,7 +287,7 @@ lmLMtests
 
 ## SLX -------------------------------------------------------------------------
 
-OLS_SLX <- lmSLX(reg.eq2, data = p_model_f, listw.nonas)
+OLS_SLX <- lmSLX(reg.eq1, data = p_model_f, listw.nonas)
 summary(OLS_SLX)
 
 imSLX <- impacts(OLS_SLX, listw=listw.nonas, R=500)
@@ -199,7 +323,7 @@ p_model_f$SLD_fit <- lmDurbin$fitted.values
 
 ## Spatial Model Diagnostics ---------------------------------------------------
 
-### SLX
+### SLX ------------------------------------------------------------------------
 
 dwtest(OLS_SLX)
 shapiro.test(p_model_f$SLX_res)
@@ -291,5 +415,6 @@ models = list(reg1, lmSAR, OLS_SLX, lmDurbin)
 model_fits <- data.frame(AIC = sapply(models, AIC),
                          AICc = sapply(models, MuMIn::AICc),
                          BIC = sapply(models, BIC))
+rownames(model_fits) <- c("OLS", "SAR", "SLX", "SLD")
 model_fits
                          
