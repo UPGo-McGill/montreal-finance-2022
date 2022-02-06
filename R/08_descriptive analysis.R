@@ -1,60 +1,61 @@
-#### 04 BASIC DESCRIPTIVE ANALYSIS ########################################
+#### 08 BASIC DESCRIPTIVE ANALYSIS #############################################
 
 source("R/01_startup.R")
-load("output/LL.Rdata")
+qload("output/LL.qsm", nthreads = availableCores())
+qload("output/geometry.qsm", nthreads = availableCores())
 
-# GRAPH 1 - Number of properties built by year of construction ---------------------------------
 
-LL_2020 %>% 
-  filter(!is.na(nombre_logements)) %>% 
-  filter(annee_construction >= 1920) %>% 
-  group_by(annee_construction) %>%
-  summarize(`Number of residential units built`=sum(nombre_logements)) %>% 
-  ggplot(aes(x= annee_construction, y= `Number of residential units built`))+
-  geom_line(color=col_palette[1]) +
-  geom_smooth(se=FALSE, color=col_palette[2])+
-  xlab("Year of construction")+ 
-  scale_y_continuous(name="Number of units built", label = scales::comma)+
+# Number of properties built by year of construction ----------------------
+
+LL_2020 |> 
+  filter(!is.na(nombre_logements), annee_construction >= 1920) |> 
+  group_by(annee_construction) |> 
+  summarize(`Number of residential units built`=sum(nombre_logements)) |> 
+  ggplot(aes(x = annee_construction, y = `Number of residential units built`)) +
+  geom_line(color = col_palette[1]) +
+  geom_smooth(se = FALSE, color = col_palette[2]) +
+  xlab("Year of construction") + 
+  scale_y_continuous(name = "Number of units built", label = scales::comma) +
   theme_minimal()
 
 
-# Ownership concentration in the city -------------------
+# Ownership concentration in the city -------------------------------------
 
 rental_concentration <- 
-  LL_analyzed %>% 
-  filter(!is.na(number_rental_units)) %>% 
-  filter(number_rental_units > 0) %>% 
-  group_by(landlord_name) %>% 
-  summarize(n=sum(number_rental_units))
+  LL_analyzed |> 
+  filter(!is.na(number_rental_units), number_rental_units > 0) |> 
+  group_by(landlord_name) |> 
+  summarize(n = sum(number_rental_units))
 
 rental_concentration_500 <- 
-  LL_analyzed %>% 
-  filter(!is.na(number_rental_units)) %>% 
-  filter(number_rental_units > 0) %>% 
-  group_by(landlord_name) %>% 
-  summarize(n=sum(number_rental_units)) %>% 
-  arrange(desc(n)) %>% 
+  LL_analyzed |> 
+  filter(!is.na(number_rental_units), number_rental_units > 0) |> 
+  group_by(landlord_name) |> 
+  summarize(n = sum(number_rental_units)) |> 
+  arrange(desc(n)) |> 
   slice(1:500)
 
-rental_concentration %>% 
-  group_by(n) %>% 
-  summarize(number_landlords = sum(n())) %>% 
-  ggplot()+
-  geom_line(aes(x=n, y=number_landlords))+
-  xlim(c(0,100))
+rental_concentration |> 
+  count(n, name = "number_landlords") |> 
+  ggplot() +
+  geom_line(aes(x = n, y = number_landlords)) +
+  xlim(c(0, 100))
 
-#' [1] average units owned
+# Average units owned
 mean(rental_concentration$n) 
 mean(rental_concentration_500$n) 
 
-#' [5] Top 10% revenue
-rental_concentration %>% summarize(top_10 = sum(n[n > quantile(n, .9)]) / sum(n))
+# Top 10%
+rental_concentration |> 
+  summarize(top_10 = sum(n[n > quantile(n, .9)]) / sum(n))
 
-#' [6] Top 5% revenue
-rental_concentration %>% summarize(top_5 = sum(n[n > quantile(n, .95)]) / sum(n))
+# Top 5%
+rental_concentration |> 
+  summarize(top_5 = sum(n[n > quantile(n, .95)]) / sum(n))
 
-#' [7] Top 1% revenue
-rental_concentration %>% summarize(top_1 = sum(n[n > quantile(n, .99)]) / sum(n))
+# Top 1%
+rental_concentration |> 
+  summarize(top_1 = sum(n[n > quantile(n, .99)]) / sum(n))
 
 landlord_repartition <- 
   rental_concentration %>%
@@ -68,8 +69,7 @@ landlord_repartition <-
          value = "value") %>% 
   mutate(percentile = factor(percentile, 
                              levels = c('Top 1%', 'Top 5%', 'Top 10%', 
-                                        'Top 20%'))
-  ) %>% 
+                                        'Top 20%'))) %>% 
   ggplot() +
   geom_bar(aes(percentile, value, fill = percentile), stat = "identity") +
   theme_minimal() +
@@ -82,9 +82,6 @@ landlord_repartition <-
                                     size = 10),
         legend.text = element_text(size = 10),
         legend.position = "none")
-
-ggsave("output/figures/landlord_repartition.pdf", plot = landlord_repartition, width = 8, 
-       height = 5, units = "in", useDingbats = FALSE)
 
 
 # Ownership by type of landlord -------------------
@@ -135,8 +132,8 @@ rental_type <-
   scale_x_discrete(name=NULL) +
   theme_minimal()
 
-ggsave("output/figures/rental_type.pdf", plot = rental_type, width = 8, 
-       height = 5, units = "in", useDingbats = FALSE)
+# ggsave("output/figures/rental_type.pdf", plot = rental_type, width = 8, 
+#        height = 5, units = "in", useDingbats = FALSE)
 
 
 # Landlord ownership table -------------------
@@ -155,89 +152,7 @@ top_landlords <-
 write_csv(top_landlords, "data/top_landlords.csv")
 
 
-# Top50 landlords and geographic repartition -------------------
 
-# top50 <- 
-#   LL_analyzed %>% 
-#   group_by(landlord_name) %>% 
-#   summarize(rentals=sum(number_rental_units, na.rm = TRUE)) %>% 
-#   arrange(desc(rentals)) %>% 
-#   slice(1:50) %>% 
-#   pull(landlord_name)
-# 
-# top50_map <- 
-#   LL_sf_centroid %>% 
-#   filter(landlord_name %in% top50) %>% 
-#   mutate(type = ifelse(company_type=="REIT", "REIT", type)) %>% 
-#   ggplot()+
-#   geom_sf(data = boroughs, fill=NA, color="grey80")+
-#   geom_sf(aes(color=type, size=number_rental_units))+
-#   facet_wrap(~type)+
-#   scale_colour_manual(name = "Landlord type", values = col_palette[c(1, 6, 3, 4, 2, 5)])+
-#   scale_size_continuous(name = "Number of rental units", limits = c(1, 3200), 
-#                         breaks = c(25, 50, 100, 300))+
-#   theme_void()
-# 
-# ggsave("output/figures/top50_map.pdf", plot = top50_map, width = 8, 
-#        height = 5, units = "in", useDingbats = FALSE)
-
-
-# Percentage of financialized ownership -------------------
-
-proportion_financialized <- 
-  LL_sf_centroid %>% 
-  filter(!is.na(number_rental_units)) %>% 
-  filter(number_rental_units > 0) %>% 
-  mutate(financialized = publicly_traded+direct_involvement_FM+financial_partners) %>% 
-  mutate(financialized = ifelse(financialized > 0, TRUE, FALSE)) %>% 
-  st_intersection(., CT) %>% 
-  st_drop_geometry() %>% 
-  group_by(GeoUID, financialized) %>% 
-  summarize(rental_units=sum(number_rental_units))
-
-percentage_financialized <- 
-  proportion_financialized %>% 
-  group_by(GeoUID) %>% 
-  summarise(total=sum(rental_units, na.rm=TRUE)) %>% 
-  full_join(., proportion_financialized, by="GeoUID") %>% 
-  mutate(p_financialized=rental_units/total) %>% 
-  filter(financialized == TRUE) %>% 
-  select(GeoUID, p_financialized)
-
-financialized_ownership <- 
-  CT %>% 
-  left_join(., percentage_financialized, by="GeoUID") %>% 
-  mutate(p_financialized=ifelse(is.na(p_financialized), 0, p_financialized)) %>% 
-  ggplot()+
-  geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(aes(fill=p_financialized), color=NA)+
-  geom_rect(xmin = 607000, ymin = 5038000, xmax = 614000, ymax = 5045000,
-            fill = NA, colour = "black", size = 0.3)+
-  scale_fill_stepsn(name="Percentage of\nfinancialized\nrental\nownership", 
-                    colors = col_palette[c(4, 1, 2, 9)],
-                    breaks = c(0.1, 0.20, 0.40, 0.60),
-                    #values = c(0.2, 0.4, 0.6),
-                    na.value = "grey80",
-                    limits = c(0, 0.75), oob = scales::squish, 
-                    labels = scales::percent)+
-  gg_bbox(boroughs) +
-  theme_void()
-
-fo_zoom <- 
-  financialized_ownership +
-  geom_sf(data = streets_downtown, size = 0.3, colour = "white") +
-  coord_sf(xlim = c(607000, 614000), ylim = c(5038000, 5045000),
-           expand = FALSE) +
-  theme(legend.position = "none",
-        panel.border = element_rect(fill = NA, colour = "black", size = 0.6))
-
-inset_financialized_ownership <- 
-  financialized_ownership + 
-  inset_element(fo_zoom, left = 0, bottom = 0.5, right = 0.6, top = 1)
-
-
-ggsave("output/figures/inset_financialized_ownership.pdf", plot = inset_financialized_ownership, width = 8, 
-       height = 5, units = "in", useDingbats = FALSE)
 
 
 # Acquisitions made by current financialized landlords in Montreal by ------
@@ -330,3 +245,10 @@ new_c_fz <-
 ggsave("output/figures/new_c_fz.pdf", plot = new_c_fz, width = 8, 
        height = 5, units = "in", useDingbats = FALSE)
 
+
+# Save output -------------------------------------------------------------
+
+qsavem(percentage_financialized, file = "output/descriptives.qsm",
+       nthreads = availableCores())
+
+rm()
