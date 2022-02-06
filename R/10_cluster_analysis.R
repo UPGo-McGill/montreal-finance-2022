@@ -91,40 +91,54 @@ CT_parent_vectors <-
   as_tibble() |> 
   st_as_sf(agr = "constant")
 
+sum_func <- function(data) {
+  
+  summarize(
+    data,
+    p_financialized = weighted.mean(p_financialized, parent_renter, 
+                                    na.rm = TRUE),
+    p_thirty_renter = weighted.mean(p_thirty_renter, parent_renter, 
+                                    na.rm = TRUE),
+    median_rent = weighted.mean(median_rent, parent_renter, na.rm = TRUE),
+    p_condo = weighted.mean(p_condo, parent_condo, na.rm = TRUE),
+    p_renter = weighted.mean(p_renter, parent_tenure, na.rm = TRUE),
+    p_repairs = weighted.mean(p_repairs, parent_repairs, na.rm = TRUE),
+    p_vm = weighted.mean(p_vm, parent_vm, na.rm = TRUE),
+    p_immigrants = weighted.mean(p_immigrants, parent_immigrants, na.rm = TRUE),
+    p_mobility_one_year = weighted.mean(p_mobility_one_year, 
+                                        parent_mobility_one_year, na.rm = TRUE),
+    p_mobility_five_years = weighted.mean(
+      p_mobility_five_years, parent_mobility_five_years, na.rm = TRUE),
+    d_downtown = mean(distance_dt, na.rm = TRUE),
+    asking_rent = weighted.mean(asking_rent, parent_renter, na.rm = TRUE),
+    change_renter_dwellings = weighted.mean(change_renter_dwellings, 
+                                            parent_renter, na.rm = TRUE),
+    average_value_dwellings = weighted.mean(average_value_dwellings, 
+                                            parent_owner, na.rm = TRUE),
+    p_five_storeys = weighted.mean(p_five_more_storeys, parent_dwellings, 
+                                   na.rm = TRUE),
+    med_hh_income = weighted.mean(med_hh_income, parent_hh_income, 
+                                  na.rm = TRUE),
+    p_18_24 = weighted.mean(p_18_24, parent_age, na.rm = TRUE)) |> 
+    st_drop_geometry()
+  
+}
+
 cluster_averages <- 
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   na.omit() |> 
   group_by(cluster) |> 
-  summarize(p_financialized = weighted.mean(p_financialized, parent_renter, 
-                                            na.rm = TRUE),
-            p_thirty_renter = weighted.mean(p_thirty_renter, parent_renter, 
-                                            na.rm = TRUE),
-            median_rent = weighted.mean(median_rent, parent_renter, 
-                                        na.rm = TRUE),
-            p_condo = weighted.mean(p_condo, parent_condo, na.rm = TRUE),
-            p_renter = weighted.mean(p_renter, parent_tenure, na.rm = TRUE),
-            p_repairs = weighted.mean(p_repairs, parent_repairs, na.rm = TRUE),
-            p_vm = weighted.mean(p_vm, parent_vm, na.rm = TRUE),
-            p_immigrants = weighted.mean(p_immigrants, parent_immigrants, 
-                                         na.rm = TRUE),
-            p_mobility_one_year = weighted.mean(
-              p_mobility_one_year, parent_mobility_one_year, na.rm = TRUE),
-            p_mobility_five_years = weighted.mean(
-              p_mobility_five_years, parent_mobility_five_years, na.rm = TRUE),
-            d_downtown = mean(distance_dt, na.rm = TRUE),
-            asking_rent = weighted.mean(asking_rent, parent_renter, 
-                                        na.rm = TRUE),
-            change_renter_dwellings = weighted.mean(
-              change_renter_dwellings, parent_renter, na.rm = TRUE),
-            average_value_dwellings = weighted.mean(
-              average_value_dwellings, parent_owner, na.rm = TRUE),
-            p_five_storeys = weighted.mean(p_five_more_storeys, 
-                                           parent_dwellings, na.rm = TRUE),
-            med_hh_income = weighted.mean(med_hh_income, parent_hh_income, 
-                                          na.rm = TRUE),
-            p_18_24 = weighted.mean(p_18_24, parent_age, na.rm = TRUE)) |> 
-  st_drop_geometry()
+  sum_func()
+
+city_wide <- 
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  na.omit() |> 
+  group_by(cluster = "Montreal average") |> 
+  sum_func()
+
+cluster_averages <- bind_rows(city_wide, cluster_averages)
 
 
 # Save cluster results ----------------------------------------------------

@@ -259,6 +259,10 @@ ggsave("output/figures/figure_2.pdf", plot = fig_2, width = 12,
        height = 8, units = "in", useDingbats = FALSE)
 
 
+# Figure 3. Multiple regression -------------------------------------------
+
+# TKTK
+
 
 # Figure 4. Cluster map ---------------------------------------------------
 
@@ -307,46 +311,30 @@ ggsave("output/figure_4.pdf", plot = fig_4, width = 8, height = 5, units = "in",
 
 # Figure 5. Cluster analysis table ----------------------------------------
 
-# Compute weighted means instead of straight means -------------------
-
-
- |> 
+# First part
+cluster_averages |> 
+  select(cluster, p_financialized, median_rent, asking_rent, p_thirty_renter,
+         med_hh_income, average_value_dwellings, p_renter, p_condo) |> 
   mutate(across(starts_with("p_"), scales::percent, 0.1),
-         median_rent = scales::dollar(median_rent, 1))
+         across(c(median_rent, asking_rent, med_hh_income, 
+                  average_value_dwellings), scales::dollar, 1)) |> 
+  set_names(c("Cluster", "Financialized rental units", "Median rent",
+              "Average asking rent", "Renters in housing stress", 
+              "After-tax median HH income", "Average dwelling value",
+              "Renter households", "Condo households")) |> 
+  gt::gt()
 
-kmeans_CT %>% 
-  left_join(., st_drop_geometry(CT_parent_vectors), by = "GeoUID") %>% 
-  na.omit() %>% 
-  mutate(group = 1) %>% 
-  group_by(group) %>% 
-  summarize(p_financialized = weighted.mean(p_financialized, parent_renter, 
-                                            na.rm=TRUE),
-            p_thirty_renter = weighted.mean(p_thirty_renter, parent_renter, 
-                                            na.rm=TRUE),
-            median_rent = weighted.mean(median_rent, parent_renter, 
-                                        na.rm=TRUE),
-            p_condo = weighted.mean(p_condo, parent_condo, na.rm=TRUE),
-            p_renter = weighted.mean(p_renter, parent_tenure, na.rm=TRUE),
-            p_repairs = weighted.mean(p_repairs, parent_repairs, na.rm=TRUE),
-            p_vm = weighted.mean(p_vm, parent_vm, na.rm=TRUE),
-            p_immigrants = weighted.mean(p_immigrants, parent_immigrants, 
-                                         na.rm=TRUE),
-            p_mobility_one_year = weighted.mean(
-              p_mobility_one_year, parent_mobility_one_year, na.rm=TRUE),
-            p_mobility_five_years = weighted.mean(
-              p_mobility_five_years, parent_mobility_five_years, na.rm=TRUE),
-            d_downtown = mean(distance_dt, na.rm=TRUE),
-            asking_rent = weighted.mean(asking_rent, parent_renter,
-                                        na.rm=TRUE),
-            change_renter_dwellings = weighted.mean(
-              change_renter_dwellings, parent_renter, na.rm=TRUE),
-            average_value_dwellings = weighted.mean(
-              average_value_dwellings, parent_owner, na.rm = TRUE),
-            p_five_storeys = weighted.mean(p_five_more_storeys, 
-                                           parent_dwellings, na.rm = TRUE),
-            med_hh_income = weighted.mean(med_hh_income, parent_hh_income, 
-                                          na.rm = TRUE),
-            p_18_24 = weighted.mean(p_18_24, parent_age, na.rm = TRUE)) %>% 
-  View()
-
+# Second part
+  cluster_averages |> 
+    select(cluster, p_five_storeys, p_mobility_one_year, p_mobility_five_years,
+           p_vm, p_immigrants, d_downtown, change_renter_dwellings, p_18_24) |> 
+  mutate(across(starts_with("p_"), scales::percent, 0.1),
+         d_downtown = scales::comma(as.numeric(d_downtown)),
+         change_renter_dwellings = scales::comma(change_renter_dwellings)) |> 
+  set_names(c("Cluster", "Households in 5+ storey buildings",
+              "Households having moved in the past year",
+              "Households having moved in the past 5 years",
+              "Visible minorities", "Immigrants", "Distance from downtown (m)",
+              "Change in renter dwellings", "Population aged 18-24")) |> 
+  gt::gt()
 
