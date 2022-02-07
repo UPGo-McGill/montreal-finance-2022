@@ -1,0 +1,208 @@
+
+#### 11 Statistical Models #####################################################
+
+library(BayesPostEst)
+library(brms)
+library(stats)
+library(tidyr)
+library(tidybayes)
+library(tidyverse)
+
+options(scipen=999)
+
+# Load data --------------------------------------------------------------------
+
+qs::qload("output/stat_model_data.qsm")
+
+# Helper functions ------------------------------------------------------------- 
+
+get_sse <- function(fitted, actual) {
+  sse <-  sum((fitted - actual)^2)
+  return(sse)
+}
+
+# Logistic models --------------------------------------------------------------
+
+## Frequentist GLM -------------------------------------------------------------
+glm_binomial <- glm(cbind(n_financialized, total) ~ ss_thirty_renter + 
+                      ss_median_rent + 
+                      ss_mobility_one_year + 
+                      ss_vm + 
+                      ss_five_more_storeys + 
+                      ss_18_24, 
+                    data = p_model_f, 
+                    family = binomial)
+glm_binomial
+
+sse_glm_bin <- get_sse(glm_binomial$fitted.values, p_model_f$p_financialized)
+sse_glm_bin
+
+plot(glm_binomial$fitted.values, p_model_f$p_financialized)
+
+## Baysian LM
+
+brms_linear_eq <- p_financialized ~ 
+  ss_thirty_renter + ss_median_rent + ss_mobility_one_year + 
+  ss_vm + ss_five_more_storeys + ss_18_24
+lin_formula <- brmsformula(formula = brms_linear_eq) 
+mlinear_priors <- get_prior(lin_formula, data=p_model_f)
+mlinear_priors$prior[c(2:7)] <- "normal(0, 2)"
+
+brms_linear <- brm(formula = lin_formula, 
+                   data = p_model_f,
+                   prior = mlinear_priors,
+                   seed = 123)
+
+pp_linear <- posterior_predict(brms_linear, draws=1000)
+pp_linear_mean <- colMeans(pp_linear)
+sse_lin <- sum((pp_linear_mean - p_model_f$p_financialized)^2)
+sse_lin
+
+ppc_linear <- data.frame(y_hat = pp_linear_mean,
+                      y = p_model_f$p_financialized)
+
+h <- 0.0
+ggplot(ppc_linear, aes(y, y_hat)) + 
+  geom_point(color = "blue", alpha = 0.2) +
+  geom_hline(yintercept = h, 
+             color="red") + 
+  geom_text(data=data.frame(x=0,y=h), aes(x, y), 
+            label="lower bound", 
+            hjust=-5,
+            vjust=1.5) +
+  theme_bw()
+
+ppc_ecdf_linear_p <- ppc_ecdf_overlay(ppc_linear$y, pp_linear)
+ppc_ecdf_linear_p
+
+plot_title <- ggtitle("Posterior distributions for linear regression",
+                      "with medians and 80% intervals")
+covariate_pars <- c("b_ss_thirty_renter", 
+                    "b_ss_median_rent", 
+                    "b_ss_mobility_one_year",
+                    "b_ss_vm",
+                    "b_ss_five_more_storeys",
+                    "b_ss_18_24",
+                    "b_Intercept")
+
+mcmc_areas(as.matrix(brms_linear),
+           pars = covariate_pars,
+           prob = 0.8) + plot_title
+
+## Bayesian Linear SAR
+
+## Bayesian GLM ----------------------------------------------------------------
+
+brms_log_eq <- n_financialized | trials(total)  ~
+  ss_thirty_renter + ss_median_rent + ss_mobility_one_year + 
+  ss_vm + ss_five_more_storeys + ss_18_24
+brms_log_formula <- brmsformula(formula = brms_log_eq, 
+                                family = binomial(link = "logit")) 
+  
+brms_log_priors <- get_prior(brms_log_formula, data=p_model_f)
+brms_log_priors$prior[c(2:7)] <- "normal(0, 2)"
+
+brms_logistic <- brm(brms_log_formula,
+                     data = p_model_f, 
+                     prior=brms_log_priors,
+                     warmup = 1000, 
+                     iter = 2000, 
+                     chains = 4, 
+                     inits = "random", 
+                     cores = 4,
+                     seed = 123)
+
+plot(brms_logistic, combo = c("dens", "trace"))
+
+pp_log <- posterior_epred(brms_logistic, draws=1000)
+pp_log_mean <- colMeans(pp_log)
+sse_log <- sum(((pp_log_mean / p_model_f$total) - p_model_f$p_financialized)^2)
+sse_log
+
+ppc_log <- data.frame(y_hat = pp_log_mean/p_model_f$total*100,
+                      y = p_model_f$p_financialized*100)
+
+ggplot(ppc_log, aes(y, y_hat)) + 
+  geom_point(color = "blue", alpha = 0.2) +
+  theme_bw()
+
+ppc_ecdf_log_p <- ppc_ecdf_overlay(ppc_log$y, pp_log)
+ppc_ecdf_log_p
+
+plot_title <- ggtitle("Posterior distributions for binomial regression",
+                      "with medians and 80% intervals")
+
+mcmc_areas(as.matrix(brms_logistic),
+           pars = covariate_pars,
+           prob = 0.8) + plot_title
+
+#ppc_violin(ppc_log$y, pp_log, alpha = 0, y_draw = "both",
+#           size = 1.5, y_alpha = 0.5, y_jitter = 0.33)
+
+ ## Bayesian GLM with BYM2 priors -----------------------------------------------
+
+p_model_f$gr <- as.factor(seq.int(nrow(p_model_f)))
+brms_bym_formula <- brmsformula(formula = brms_log_eq, 
+                           family = binomial(link = "logit"),
+                           autocor = ~ car(w, gr=gr,type = "bym")) 
+
+stan_data2 = list(w=w_mat)
+brms_bym_priors <- get_prior(brms_bym_formula, data=p_model_f,data2=stan_data2)
+brms_bym_priors$prior[c(2:7)] <- "normal(0, 1)"
+brms_bym_priors$prior[10] <- "normal(0, 1)" 
+control <- list(max_treedepth = 12,
+                adapt_delta = 0.97, 
+                stepsize = 0.5)
+brms_log_bym <- brm(stan_car_eq, 
+                    prior=brms_bym_priors,
+                    data = p_model_f, 
+                    data2=stan_data2,
+                    warmup = 500, 
+                    iter = 2000,
+                    chains = 4, 
+                    inits = "random", 
+                    cores = 4,
+                    seed = 123,
+                    thin = 1,
+                    save_pars = save_pars(all = TRUE))
+
+plot(brms_log_bym, combo = c("dens", "trace"))
+
+mcmc_areas(as.matrix(brms_log_bym),
+           pars = covariate_pars,
+           prob = 0.8) + plot_title
+
+
+pp_bym <- posterior_epred(brms_log_bym, ndraws = 50)
+pp_bym_mean <- colMeans(pp_bym)
+sse_bym <- sum(((pp_bym_mean / p_model_f$total)*100 - p_model_f$p_financialized*100)^2)
+sse_bym
+
+counts_ppc <- rep(p_model_f$total, 10)
+y_ppc  <- rep(p_model_f$p_financialized, 10)
+
+ppc_bym <- tibble(
+  y_hat = as.vector(t(pp_bym[1:10,])) / counts_ppc,
+  y = y_ppc)
+
+#ppc_bym <- data.frame(y_hat = pp_bym[]p_model_f$total*100,
+#                 y = p_model_f$p_financialized*100)
+
+ggplot(ppc_bym, aes(y, y_hat)) + 
+  geom_point(color = "blue", alpha = 0.2) +
+  theme_bw()
+
+ppc_ecdf_bym_p <- ppc_ecdf_overlay(ppc_bym$y, pp_bym)
+ppc_ecdf_bym_p
+
+coefnames <- c("% renters' housing stress","Median rent",
+               "% one year mobility", "% visible minorities",
+               "% dwelling in five+ stories", "% pop18-24",
+               "Intercept")
+
+mcmcReg(list(brms_linear = brms_linear, brms_logistic, brms_log_bym),  
+        pars = covariate_pars,pointest = "mean",
+        coefnames = list(coefnames,coefnames,coefnames))
+
+
+                         
