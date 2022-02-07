@@ -84,7 +84,12 @@ adjacency_plot <- ggplot(st_as_sf(data_model_f)) +
 
 # Save plots for paper ---------------------------------------------------------
 
-adjacency_plot
+adjplot_fn <- "output/figures/BYM_adjacency_map"
+ggsave(
+  adjplot_fn,
+  device = "jpeg",
+  plot = adjacency_plot)
+
 
 # Save data for models ---------------------------------------------------------
 
