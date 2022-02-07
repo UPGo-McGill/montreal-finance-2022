@@ -1,6 +1,7 @@
 
 #### 12 Statistical models for paper ###########################################
 
+library(bayesplot)
 library(BayesPostEst)
 library(brms)
 library(stats)
@@ -9,6 +10,7 @@ library(tidybayes)
 library(tidyverse)
 
 options(scipen=999)
+bayesplot::theme_default()
 
 # Load data --------------------------------------------------------------------
 
@@ -24,8 +26,7 @@ get_sse <- function(fitted, actual) {
 plot_fit <- function(fitted, actual) {
   data <- data.frame("predicted" = fitted, "actual" = actual)
   ggplot(data, aes(x = predicted, y = actual)) +
-    geom_point(color = "blue", alpha = 0.2) +
-    theme_bw()
+    geom_point(color = "blue", alpha = 0.2)
 }
 
 # Models -----------------------------------------------------------------------
@@ -155,25 +156,26 @@ brms_bym_formula <- brmsformula(formula = brms_log_eq,
                            family = binomial(link = "logit"),
                            autocor = ~ car(w, gr=gr,type = "bym")) 
 
-stan_data2 = list(w=w_mat)
+stan_data2 = list(w=BYM_adj_mat)
 brms_bym_priors <- get_prior(brms_bym_formula, data=data_model_f,data2=stan_data2)
 brms_bym_priors$prior[c(2:7)] <- "normal(0, 1)"
 brms_bym_priors$prior[10] <- "normal(0, 1)" 
 control <- list(max_treedepth = 12,
                 adapt_delta = 0.97, 
                 stepsize = 0.5)
-brms_log_bym <- brm(stan_car_eq, 
+brms_log_bym <- brm(brms_bym_formula, 
                     prior=brms_bym_priors,
                     data = data_model_f, 
                     data2=stan_data2,
-                    warmup = 500, 
-                    iter = 2000,
+                    warmup = 2000, 
+                    iter = 8000,
                     chains = 4, 
                     inits = "random", 
                     cores = 4,
                     seed = 123,
                     thin = 1,
-                    save_pars = save_pars(all = TRUE))
+                    save_pars = save_pars(all = TRUE),
+                    control = control)
 
 plot(brms_log_bym, combo = c("dens", "trace"))
 
@@ -214,5 +216,40 @@ mcmcReg(list(brms_linear = brms_linear, brms_logistic, brms_log_bym),
         pars = covariate_pars,pointest = "mean",
         coefnames = list(coefnames,coefnames,coefnames))
 
+# Compare Models ---------------------------------------------------------------
 
+## Posterior draws by coefficient ----------------------------------------------
+
+linear_draws_df <- brms_linear %>%
+  as_tibble() %>%
+  dplyr::select(covariate_pars, -b_Intercept) %>%
+  gather(key='estimate', value='coefficient') %>%
+  mutate(model = 'linear')
+
+log_draws_df <- brms_logistic %>%
+  as_tibble() %>%
+  dplyr::select(covariate_pars, -b_Intercept) %>%
+  gather(key='estimate', value='coefficient') %>%
+  mutate(model = 'logistic')
+
+bym_draws_df <- brms_log_bym %>%
+  as_tibble() %>%
+  dplyr::select(covariate_pars, -b_Intercept) %>%
+  gather(key='estimate', value='coefficient') %>%
+  mutate(model = 'bym2')
+
+model_draws_df <- bind_rows(linear_draws_df, log_draws_df, bym_draws_df)
+
+ggplot(model_draws_df, aes(x = coefficient, y = estimate, fill = model)) + 
+  stat_density_ridges(calc_ecdf = TRUE,
+                      quantiles = c(0.025, 0.975),
+                      alpha=0.5,
+                      scale=1) + 
+  scale_fill_cyclical(
+    name = "Model",
+    values = c("yellow", "orange", "red"),
+    labels = c("Fair" = "blue", "Good" = "green"),
+    guide = "legend"
+  ) +
+  theme_bw()
                          
