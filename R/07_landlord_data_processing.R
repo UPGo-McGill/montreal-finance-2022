@@ -95,27 +95,22 @@ uef <-
   st_as_sf() |>
   select(NOM_RUE, CIVIQUE_DE, CIVIQUE_FI, NOMBRE_LOG, ANNEE_CONS, 
          MATRICULE8) |> 
-  rename(numero_matricule = MATRICULE8)
-
-uef_centroid <- 
-  uef |> 
-  st_centroid()
+  rename(numero_matricule = MATRICULE8) |> 
+  mutate(centroid = st_centroid(geometry))
 
 LL_sf <- 
   LL_analyzed |> 
-  inner_join(select(uef, numero_matricule), by = "numero_matricule") |> 
-  st_as_sf() |> 
-  st_transform(32618)
-
-LL_sf_centroid <- 
-  LL_analyzed |> 
-  inner_join(select(uef_centroid, numero_matricule), 
+  inner_join(select(uef, numero_matricule, centroid, geometry), 
              by = "numero_matricule") |> 
-  st_as_sf() |> 
-  st_transform(32618)
+  st_as_sf()
+
+uef <- 
+  uef |> 
+  st_filter(CT) |> 
+  summarize()
 
 
-# 2020 asking rents -------------------------------------------------------------
+# 2020 asking rents -------------------------------------------------------
 
 ltr <- 
   qread("data/ltr_processed.qs", nthreads = availableCores()) |> 
@@ -142,11 +137,11 @@ CT <-
 
 # Save output -------------------------------------------------------------
 
-qsavem(LL_2020, LL_analyzed, LL_sf_centroid, file = "output/LL.qsm",
+qsavem(LL_2020, LL_analyzed, LL_sf, file = "output/LL.qsm",
        nthreads = availableCores())
-qsavem(boroughs, CT, CT_06, province, file = "output/geometry.qsm",
-       nthreads = availableCores())
+qsavem(boroughs, CT, CT_06, province, streets_downtown, uef,
+       file = "output/geometry.qsm", nthreads = availableCores())
 
-rm(asking_rents, individuals_landlords, LL_sf, ltr, non_fz_PM_landlords,
-   req_names, req_parsed, total_landlords, uef, uef_centroid, individuals,
+rm(asking_rents, individuals_landlords, ltr, non_fz_PM_landlords,
+   req_names, req_parsed, total_landlords, uef, individuals,
    no_corporate_info_avail, non_financialized, obnl, rest)

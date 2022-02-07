@@ -3,7 +3,7 @@
 source("R/01_startup.R")
 qload("output/LL.qsm", nthreads = availableCores())
 
-# This script requires `postal_adresses_owners.xlsx` (the result of manual
+# This script requires `postal_addresses_owners.xlsx` (the result of manual
 # classification) to be present in `data`.
 
 

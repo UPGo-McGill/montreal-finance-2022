@@ -112,25 +112,16 @@ CT <-
   CT_06 |> 
   select(renter) |>  
   rename(renter_06 = renter) |> 
+  mutate(renter_06 = coalesce(renter_06, 0)) |> 
   st_interpolate_aw(CT, extensive = TRUE) |> 
   st_drop_geometry() |> 
   select(renter_06) |> 
   cbind(CT) |> 
   as_tibble() |> 
   st_as_sf() |> 
-  mutate(change_renter_dwellings = renter - renter_06, .before = geometry) |> 
-  select(-renter, -renter_06) 
-
-# The change in renter dwellings gave non-justified NAs; this code fixes that.
-CT <-
-  CT |> 
-  mutate(renter_16 = p_renter * dwellings) |> 
-  right_join(CT_06 |> select(GeoUID, renter) |> st_drop_geometry(), 
-             by = "GeoUID") |> 
-  mutate(change_renter_dwellings = if_else(
-    is.na(change_renter_dwellings) & !is.na(renter_16), renter_16 - renter, 
-    change_renter_dwellings)) |> 
-  select(-renter, -renter_16)
+  mutate(renter = coalesce(renter, 0),
+         change_renter_dwellings = renter - renter_06, .before = geometry) |> 
+  relocate(renter_06, .after = renter)
 
 
 # Add distance to downtown as a variable -----------------------------------
@@ -143,7 +134,8 @@ downtown <-
 
 CT <- 
   CT |> 
-  mutate(distance_dt = st_distance(st_centroid(geometry), downtown)) 
+  mutate(distance_dt = st_distance(st_centroid(geometry), downtown),
+         .before = geometry) 
 
 
 # Montreal boroughs -------------------------------------------------------
@@ -212,4 +204,5 @@ streets_downtown <-
 
 qsavem(boroughs, CT, CT_06, province, streets_downtown,
        file = "output/geometry.qsm", nthreads = availableCores())
+
 rm(boroughs_raw, DA, downtown, downtown_poly, streets)
