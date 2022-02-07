@@ -90,13 +90,12 @@ ggsave(
   device = "jpeg",
   plot = adjacency_plot)
 
-
 # Save data for models ---------------------------------------------------------
 
 qs::qsavem(data_model_f, 
            queen_adj_listw, 
            queen_adj_sf, 
-           BYM_adj_list, 
+           BYM_adj_mat, 
            file = "output/stat_model_data.qsm", 
            nthreads = parallelly::availableCores())
 
