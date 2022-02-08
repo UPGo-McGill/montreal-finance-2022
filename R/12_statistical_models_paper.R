@@ -90,7 +90,7 @@ ppc_linear <- data.frame(y_hat = pp_linear[1:10,],
                          y = data_model_f$p_financialized)
 
 ppc_dens_overlay_linear_p <- ppc_dens_overlay(data_model_f$p_financialized, 
-                                              pp_linear,
+                                              ppc_linear$y_hat,
                                               size = 0.5,
                                               trim=T)
 ppc_dens_overlay_linear_p
@@ -99,12 +99,12 @@ pival_linear <- posterior_interval(brms_linear)
 
 plot_title <- ggtitle("Posterior distributions for linear regression",
                       "with medians and 80% intervals")
-covariate_pars <- c("b_ss_thirty_renter", 
-                    "b_ss_median_rent", 
-                    "b_ss_mobility_one_year",
-                    "b_ss_vm",
-                    "b_ss_five_more_storeys",
-                    "b_ss_18_24",
+covariate_pars <- c("b_p_thirty_renter", 
+                    "b_median_rent", 
+                    "b_p_mobility_one_year",
+                    "b_p_vm",
+                    "b_p_five_more_storeys",
+                    "b_p_18_24",
                     "b_Intercept")
 
 mcmc_areas(as.matrix(brms_linear),
@@ -119,8 +119,8 @@ mcmc_areas(as.matrix(brms_linear),
 ## Bayesian GLM ----------------------------------------------------------------
 
 brms_log_eq <- n_financialized | trials(total)  ~
-  ss_thirty_renter + ss_median_rent + ss_mobility_one_year + 
-  ss_vm + ss_five_more_storeys + ss_18_24
+  p_thirty_renter + median_rent + p_mobility_one_year + 
+  p_vm + p_five_more_storeys + p_18_24
 brms_log_formula <- brmsformula(formula = brms_log_eq, 
                                 family = binomial(link = "logit")) 
   
@@ -164,8 +164,7 @@ mcmc_areas(as.matrix(brms_logistic),
   vline_0(colour = "orange") +
   theme_bw()
 
-
- ## Bayesian GLM with BYM2 priors ----------------------------------------------
+## Bayesian GLM with BYM2 priors ----------------------------------------------
 
 data_model_f$gr <- as.factor(seq.int(nrow(data_model_f)))
 brms_bym_formula <- brmsformula(formula = brms_log_eq, 
