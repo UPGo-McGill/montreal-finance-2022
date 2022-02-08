@@ -29,6 +29,11 @@ plot_fit <- function(fitted, actual) {
     geom_point(color = "blue", alpha = 0.2)
 }
 
+pred_to_proportion <- function(draw_m, totals) {
+  as_prop <- t(t(draw_m)/totals)
+  return(as_prop)
+}
+
 # Models -----------------------------------------------------------------------
 
 ## Frequentist Binomial Regression ---------------------------------------------
@@ -48,6 +53,10 @@ sse_glm_bin
 
 plot_fit(glm_binomial$fitted.values, data_model_f$p_financialized)
 
+## Bayesian setup --------------------------------------------------------------
+
+ndraws = 2000
+
 ## BRMS Linear Regression ------------------------------------------------------
 
 brms_linear_eq <- p_financialized ~ 
@@ -62,27 +71,19 @@ brms_linear <- brm(formula = lin_formula,
                    prior = mlinear_priors,
                    seed = 123)
 
-pp_linear <- posterior_predict(brms_linear, draws=1000)
+pp_linear <- posterior_predict(brms_linear, ndraws=ndraws)
 pp_linear_mean <- colMeans(pp_linear)
 sse_lin <- get_sse(pp_linear_mean, data_model_f$p_financialized)
 sse_lin
 
 ppc_linear <- data.frame(y_hat = pp_linear[1:10,],
-                      y = data_model_f$p_financialized)
+                         y = data_model_f$p_financialized)
 
-h <- 0.0
-ggplot(ppc_linear, aes(y, y_hat)) + 
-  geom_point(color = "blue", alpha = 0.2) +
-  geom_hline(yintercept = h, 
-             color="red") + 
-  geom_text(data=data.frame(x=0,y=h), aes(x, y), 
-            label="lower bound", 
-            hjust=-5,
-            vjust=1.5) +
-  theme_bw()
-
-ppc_ecdf_linear_p <- ppc_ecdf_overlay(ppc_linear$y, pp_linear)
-ppc_ecdf_linear_p
+ppc_dens_overlay_linear_p <- ppc_dens_overlay(data_model_f$p_financialized, 
+                                              pp_linear,
+                                              size = 0.5,
+                                              trim=T)
+ppc_dens_overlay_linear_p
 
 plot_title <- ggtitle("Posterior distributions for linear regression",
                       "with medians and 80% intervals")
@@ -123,21 +124,24 @@ brms_logistic <- brm(brms_log_formula,
 
 plot(brms_logistic, combo = c("dens", "trace"))
 
-pp_log <- posterior_epred(brms_logistic, draws=1000)
+pp_log <- posterior_epred(brms_logistic, ndraws=ndraws)
 pp_log_mean <- colMeans(pp_log)
 sse_log <- get_sse((pp_log_mean / data_model_f$total),
                    data_model_f$p_financialized)
 sse_log
 
-ppc_log <- data.frame(y_hat = pp_log_mean/data_model_f$total*100,
-                      y = data_model_f$p_financialized*100)
+ppc_log <- data.frame(y_hat = pp_log_mean/data_model_f$total,
+                      y = data_model_f$p_financialized)
 
-ggplot(ppc_log, aes(y, y_hat)) + 
-  geom_point(color = "blue", alpha = 0.2) +
-  theme_bw()
-
-ppc_ecdf_log_p <- ppc_ecdf_overlay(ppc_log$y, pp_log)
+ppc_ecdf_log_p <- ppc_ecdf_overlay(ppc_log$y, 
+                                   pred_to_proportion(pp_log,data_model_f$total))
 ppc_ecdf_log_p
+
+ppc_dens_overlay_log_p <- ppc_dens_overlay(data_model_f$p_financialized, 
+                                           pred_to_proportion(pp_log,data_model_f$total),
+                                           size = 0.5,
+                                           trim=T)
+ppc_dens_overlay_log_p
 
 plot_title <- ggtitle("Posterior distributions for binomial regression",
                       "with medians and 80% intervals")
@@ -182,7 +186,7 @@ mcmc_areas(as.matrix(brms_log_bym),
            prob = 0.8) + plot_title
 
 
-pp_bym <- posterior_epred(brms_log_bym, ndraws = 50)
+pp_bym <- posterior_epred(brms_log_bym, ndraws = ndraws)
 pp_bym_mean <- colMeans(pp_bym)
 sse_bym <- get_sse((pp_bym_mean / data_model_f$total)*100,
                    data_model_f$p_financialized*100)
@@ -191,19 +195,15 @@ sse_bym
 counts_ppc <- rep(data_model_f$total, 10)
 y_ppc  <- rep(data_model_f$p_financialized, 10)
 
-ppc_bym <- tibble(
-  y_hat = as.vector(t(pp_bym[1:10,])) / counts_ppc,
-  y = y_ppc)
-
-#ppc_bym <- data.frame(y_hat = pp_bym[]data_model_f$total*100,
-#                 y = data_model_f$p_financialized*100)
-
-ggplot(ppc_bym, aes(y, y_hat)) + 
-  geom_point(color = "blue", alpha = 0.2) +
-  theme_bw()
-
-ppc_ecdf_bym_p <- ppc_ecdf_overlay(ppc_bym$y, pp_bym)
+ppc_ecdf_bym_p <- ppc_ecdf_overlay(data_model_f$p_financialized, 
+                                   pred_to_proportion(pp_bym,data_model_f$total))
 ppc_ecdf_bym_p
+
+ppc_dens_overlay_bym_p <- ppc_dens_overlay(data_model_f$p_financialized, 
+                                           pred_to_proportion(pp_bym, data_model_f$total),
+                                           size = 0.5,
+                                           trim=T)
+ppc_dens_overlay_bym_p
 
 coefnames <- c("% renters' housing stress","Median rent",
                "% one year mobility", "% visible minorities",
@@ -263,18 +263,20 @@ ggplot(model_draws_df, aes(x = coefficient,
       
 ## Posterior predictions -------------------------------------------------------
 
+n_points = 10
+
 ppc_linear <- tibble(
-  y_hat = as.vector(t(pp_linear[1:10,])),
+  y_hat = as.vector(t(pp_linear[1:n_points,])),
   y = y_ppc) %>%
   mutate(model = "linear")
 
 ppc_log <- tibble(
-  y_hat = as.vector(t(pp_log[1:10,])) / counts_ppc,
+  y_hat = as.vector(t(pp_log[1:n_points,])) / counts_ppc,
   y = y_ppc) %>%
   mutate(model = "binomial")
 
 ppc_bym <- tibble(
-  y_hat = as.vector(t(pp_bym[1:10,])) / counts_ppc,
+  y_hat = as.vector(t(pp_bym[1:n_points,])) / counts_ppc,
   y = y_ppc) %>%
   mutate(model = "binomial-bym2")
 
@@ -283,7 +285,6 @@ model_ppc_df <- ppc_linear %>%
   mutate(model = factor(model, levels = c('linear','binomial', 'binomial-bym2')),
          Prediction = ifelse(y_hat < 0, "Less than 0", "Between 0 and 1")) %>%
   rename(predicted = y_hat, actual = y)
-  
 
 ggplot(model_ppc_df, aes(x = predicted, y = actual, color = Prediction)) + 
   geom_point(alpha = 0.5) +
@@ -294,4 +295,20 @@ ggplot(model_ppc_df, aes(x = predicted, y = actual, color = Prediction)) +
                       values = c("blue", "red")) + 
   theme_bw()
 
-## Posterior predictions -------------------------------------------------------
+## PPC ECDF Overlay ------------------------------------------------------------
+
+y_ppc_ecdf <- rep(data_model_f$p_financialized, 3)
+y_pred_ppc_ecdf <- cbind(pp_linear, 
+                         pred_to_proportion(pp_log, data_model_f$total), 
+                         pred_to_proportion(pp_bym, data_model_f$total))
+groups_ppc_ecdf <- factor(cbind(rep("linear", 460), 
+                         rep("binomial", 460),
+                         rep("binomial-bym2", 460)), 
+                         levels = c('linear','binomial', 'binomial-bym2'))
+
+ppc_ecdf_p <- ppc_dens_overlay_grouped(y = y_ppc_ecdf,
+                                       yrep = y_pred_ppc_ecdf,
+                                       group = groups_ppc_ecdf) +
+  theme_bw()
+ppc_ecdf_p
+
