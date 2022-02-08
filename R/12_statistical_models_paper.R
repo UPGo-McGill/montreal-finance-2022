@@ -85,6 +85,8 @@ ppc_dens_overlay_linear_p <- ppc_dens_overlay(data_model_f$p_financialized,
                                               trim=T)
 ppc_dens_overlay_linear_p
 
+pival_linear <- posterior_interval(brms_linear)
+
 plot_title <- ggtitle("Posterior distributions for linear regression",
                       "with medians and 80% intervals")
 covariate_pars <- c("b_ss_thirty_renter", 
@@ -97,7 +99,10 @@ covariate_pars <- c("b_ss_thirty_renter",
 
 mcmc_areas(as.matrix(brms_linear),
            pars = covariate_pars,
-           prob = 0.8) + plot_title
+           prob = 0.95) + 
+  plot_title +
+  vline_0(colour = "orange") +
+  theme_bw()
 
 ## Bayesian Linear SAR
 
@@ -124,7 +129,7 @@ brms_logistic <- brm(brms_log_formula,
 
 plot(brms_logistic, combo = c("dens", "trace"))
 
-pp_log <- posterior_epred(brms_logistic, ndraws=ndraws)
+pp_log <- posterior_predict(brms_logistic, ndraws=ndraws)
 pp_log_mean <- colMeans(pp_log)
 sse_log <- get_sse((pp_log_mean / data_model_f$total),
                    data_model_f$p_financialized)
@@ -133,10 +138,6 @@ sse_log
 ppc_log <- data.frame(y_hat = pp_log_mean/data_model_f$total,
                       y = data_model_f$p_financialized)
 
-ppc_ecdf_log_p <- ppc_ecdf_overlay(ppc_log$y, 
-                                   pred_to_proportion(pp_log,data_model_f$total))
-ppc_ecdf_log_p
-
 ppc_dens_overlay_log_p <- ppc_dens_overlay(data_model_f$p_financialized, 
                                            pred_to_proportion(pp_log,data_model_f$total),
                                            size = 0.5,
@@ -144,11 +145,14 @@ ppc_dens_overlay_log_p <- ppc_dens_overlay(data_model_f$p_financialized,
 ppc_dens_overlay_log_p
 
 plot_title <- ggtitle("Posterior distributions for binomial regression",
-                      "with medians and 80% intervals")
+                      "with medians and 95% intervals")
 
 mcmc_areas(as.matrix(brms_logistic),
            pars = covariate_pars,
-           prob = 0.8) + plot_title
+           prob = 0.95) + 
+  plot_title +
+  vline_0(colour = "orange") +
+  theme_bw()
 
 
  ## Bayesian GLM with BYM2 priors ----------------------------------------------
@@ -186,7 +190,7 @@ mcmc_areas(as.matrix(brms_log_bym),
            prob = 0.8) + plot_title
 
 
-pp_bym <- posterior_epred(brms_log_bym, ndraws = ndraws)
+pp_bym <- posterior_predict(brms_log_bym, ndraws = ndraws)
 pp_bym_mean <- colMeans(pp_bym)
 sse_bym <- get_sse((pp_bym_mean / data_model_f$total)*100,
                    data_model_f$p_financialized*100)
@@ -194,10 +198,6 @@ sse_bym
 
 counts_ppc <- rep(data_model_f$total, 10)
 y_ppc  <- rep(data_model_f$p_financialized, 10)
-
-ppc_ecdf_bym_p <- ppc_ecdf_overlay(data_model_f$p_financialized, 
-                                   pred_to_proportion(pp_bym,data_model_f$total))
-ppc_ecdf_bym_p
 
 ppc_dens_overlay_bym_p <- ppc_dens_overlay(data_model_f$p_financialized, 
                                            pred_to_proportion(pp_bym, data_model_f$total),
@@ -238,9 +238,69 @@ bym_draws_df <- brms_log_bym %>%
 
 model_draws_df <- linear_draws_df %>%
   bind_rows(log_draws_df, bym_draws_df) %>%
-  mutate(model = factor(model, levels = c('linear','binomial', 'binomial-bym2'))) %>% 
-  filter(estimate != "b_Intercept")
+  mutate(model = factor(model, levels = c('linear','binomial', 'binomial-bym2'))) 
+#%>% 
+#  filter(estimate != "b_Intercept")
 
+param_draws_linear <- brms_linear %>% 
+  as_draws_df() %>%
+  dplyr::select(covariate_pars) %>%
+  rename(Intercept = b_Intercept,
+         `% renters' in stress` = b_ss_thirty_renter,
+         `median rent` = b_ss_median_rent,
+         `% visible minorities` = b_ss_vm,
+         `% dwelling in 5+ st.` = b_ss_five_more_storeys,
+         `% 1 year mob.` = b_ss_mobility_one_year,
+         `% pop 18-24` = b_ss_18_24)
+
+param_draws_log <- brms_logistic %>%
+  as_draws_df() %>%
+  dplyr::select(covariate_pars) %>%
+  rename(Intercept = b_Intercept,
+         `% renters' in stress` = b_ss_thirty_renter,
+         `median rent` = b_ss_median_rent,
+         `% visible minorities` = b_ss_vm,
+         `% dwelling in 5+ st.` = b_ss_five_more_storeys,
+         `% 1 year mob.` = b_ss_mobility_one_year,
+         `% pop 18-24` = b_ss_18_24)
+
+param_draws_bym <- brms_log_bym %>%
+  as_draws_df() %>%
+  dplyr::select(covariate_pars) %>%
+  rename(Intercept = b_Intercept,
+          `% renters' in stress` = b_ss_thirty_renter,
+         `median rent` = b_ss_median_rent,
+         `% visible minorities` = b_ss_vm,
+         `% dwelling in 5+ st.` = b_ss_five_more_storeys,
+         `% 1 year mob.` = b_ss_mobility_one_year,
+         `% pop 18-24` = b_ss_18_24)
+
+combined <- rbind(mcmc_intervals_data(param_draws_linear),
+                  mcmc_intervals_data(param_draws_log),
+                  mcmc_intervals_data(param_draws_bym))
+combined$model <- rep(c("linear", "binomial", "bym"), 
+                      each = ncol(param_draws_linear))
+combined <- filter(combined, parameter != 'b_Intercept')
+
+# make the plot using ggplot 
+
+pos <- position_nudge(y = ifelse(
+  combined$model == "binomial", 0, ifelse(combined$model == "bym", 0.1, 0.2)))
+ggplot(combined, aes(x = m, y = parameter, color = model)) + 
+  geom_linerange(aes(xmin = l, xmax = h), position = pos, size=2)+
+  geom_linerange(aes(xmin = ll, xmax = hh), position = pos)+
+  geom_linerange(aes(xmin = ll, xmax = hh), position = pos)+
+  geom_point(position = pos, size = 2) +
+  geom_point(position = pos, color = "black", size = 0.5) +
+  geom_vline(xintercept = 0.0, 
+             color="orange",
+             alpha = 0.5,
+             size = 1) + 
+  scale_colour_manual(labels = c("binomial", "bym", "linear"), 
+                      values = c("red", "green", "blue")) + 
+  xlab("estimate") + 
+  theme_bw()
+       
 ggplot(model_draws_df, aes(x = coefficient, 
                            y = estimate,
                            fill = factor(stat(quantile)))) + 
@@ -263,20 +323,20 @@ ggplot(model_draws_df, aes(x = coefficient,
       
 ## Posterior predictions -------------------------------------------------------
 
-n_points = 10
+n_draws_points = ndraws
 
 ppc_linear <- tibble(
-  y_hat = as.vector(t(pp_linear[1:n_points,])),
+  y_hat = as.vector(t(pp_linear[1:n_draws_points,])),
   y = y_ppc) %>%
   mutate(model = "linear")
 
 ppc_log <- tibble(
-  y_hat = as.vector(t(pp_log[1:n_points,])) / counts_ppc,
+  y_hat = as.vector(t(pp_log[1:n_draws_points,])) / counts_ppc,
   y = y_ppc) %>%
   mutate(model = "binomial")
 
 ppc_bym <- tibble(
-  y_hat = as.vector(t(pp_bym[1:n_points,])) / counts_ppc,
+  y_hat = as.vector(t(pp_bym[1:n_draws_points,])) / counts_ppc,
   y = y_ppc) %>%
   mutate(model = "binomial-bym2")
 
