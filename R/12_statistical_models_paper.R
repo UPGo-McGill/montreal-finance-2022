@@ -30,11 +30,12 @@ get_sse <- function(fitted, actual) {
 plot_fit <- function(fitted, actual) {
   data <- data.frame("predicted" = fitted, "actual" = actual)
   ggplot(data, aes(x = predicted, y = actual)) +
-    geom_point(color = "blue", alpha = 0.2)
+    geom_point(color = "blue", alpha = 0.2) +
+    theme_bw()
 }
 
-pred_to_proportion <- function(draw_m, totals) {
-  as_prop <- t(t(draw_m)/totals)
+pred_to_proportion <- function(draw_m, totals, n) {
+  as_prop <- t(t(draw_m[1:n,])/totals)
   return(as_prop)
 }
 
@@ -75,13 +76,21 @@ summary(glm_binomial)
 sse_glm_bin <- get_sse(glm_binomial$fitted.values, data_model_f$p_financialized)
 sse_glm_bin
 
-plot_fit(glm_binomial$fitted.values, data_model_f$p_financialized)
+glm_fit_p <- plot_fit(glm_binomial$fitted.values, 
+                      data_model_f$p_financialized)
 
 ## 1.2 BRMS Linear Regression --------------------------------------------------
 
 ### 1.2.0 General setup --------------------------------------------------------
 
 ndraws = 2000
+warmup = 2000
+iterations = 8000
+seed = 123
+chains = 4
+cores = 4
+inits = "random"
+save_m_pars = save_pars(all = TRUE)
 
 covariate_pars <- c("b_p_thirty_renter", 
                     "b_median_rent", 
@@ -108,95 +117,102 @@ mlinear_priors$prior[c(2:7)] <- "normal(0, 2)"
 brms_linear <- brm(formula = lin_formula, 
                    data = data_model_f,
                    prior = mlinear_priors,
-                   seed = 123)
+                   warmup = warmup,
+                   iter = iterations,
+                   seed = seed,
+                   chains = chains,
+                   cores = cores,
+                   inits = inits,
+                   save_pars = save_m_pars)
 
 ### 1.2.3 Eval model -----------------------------------------------------------
 
-pp_linear <- posterior_predict(brms_linear, ndraws=ndraws)
-pp_linear_mean <- colMeans(pp_linear)
-sse_lin <- get_sse(pp_linear_mean, data_model_f$p_financialized)
-sse_lin
+plot(brms_linear, combo = c("dens", "trace"))
+pairs(brms_linear)
 
-ppc_linear <- data.frame(y_hat = pp_linear[1:10,],
-                         y = data_model_f$p_financialized)
+pp_linear <- posterior_predict(brms_linear, ndraws=ndraws)
+get_sse(colMeans(pp_linear), data_model_f$p_financialized)
 
 ppc_dens_overlay_linear_p <- ppc_dens_overlay(data_model_f$p_financialized, 
-                                              pp_linear,
+                                              pp_linear[1:100,],
                                               size = 0.5,
                                               trim=T)
 ppc_dens_overlay_linear_p
 
 plot_title <- ggtitle("Posterior distributions for linear regression",
                       "with medians and 80% intervals")
-mcmc_areas(as.matrix(brms_linear),
-           pars = covariate_pars,
-           prob = 0.95) + 
+lin_mcmc_coefs <- mcmc_areas(as.matrix(brms_linear),
+                             pars = covariate_pars,
+                             prob = 0.95) + 
   plot_title +
   vline_0(colour = "orange") +
   theme_bw()
+
+lin_mcmc_coefs
 
 ## 1.3. Bayesian binomial regression -------------------------------------------
 
 ### 1.3.1 Prep model params ----------------------------------------------------
 
-brms_log_eq <- n_financialized | trials(total)  ~
+brms_bin_eq <- n_financialized | trials(total)  ~
   p_thirty_renter + median_rent + p_mobility_one_year + 
   p_vm + p_five_more_storeys + p_18_24
-brms_log_formula <- brmsformula(formula = brms_log_eq, 
+brms_bin_formula <- brmsformula(formula = brms_bin_eq, 
                                 family = binomial(link = "logit")) 
   
-brms_log_priors <- get_prior(brms_log_formula, data=data_model_f)
-brms_log_priors$prior[c(2:7)] <- "normal(0, 2)"
+brms_bin_priors <- get_prior(brms_bin_formula, data=data_model_f)
+brms_bin_priors$prior[c(2:7)] <- "normal(0, 2)"
 
 ### 1.3.2 Run model ------------------------------------------------------------
 
-brms_logistic <- brm(brms_log_formula,
-                     data = data_model_f, 
-                     prior=brms_log_priors,
-                     warmup = 1000, 
-                     iter = 2000, 
-                     chains = 4, 
-                     inits = "random", 
-                     cores = 4,
-                     seed = 123)
+brms_binomial<- brm(brms_bin_formula,
+                    data = data_model_f, 
+                    prior=brms_log_priors,
+                    warmup = warmup, 
+                    iter = iterations, 
+                    chains = chains, 
+                    inits = inits, 
+                    cores = cores,
+                    seed = seed,
+                    save_pars = save_m_pars)
+
 ### 1.3.3 Eval model -----------------------------------------------------------
 
-plot(brms_logistic, combo = c("dens", "trace"))
+plot(brms_binomial, combo = c("dens", "trace"))
+pairs(brms_binomial)
 
-pp_log <- posterior_predict(brms_logistic, ndraws=ndraws)
-pp_log_mean <- colMeans(pp_log)
-sse_log <- get_sse((pp_log_mean / data_model_f$total),
-                   data_model_f$p_financialized)
-sse_log
+pp_bin <- posterior_predict(brms_binomial, ndraws=ndraws)
+get_sse((colMeans(pp_bin) / data_model_f$total),
+        data_model_f$p_financialized)
 
-ppc_log <- data.frame(y_hat = pp_log_mean/data_model_f$total,
-                      y = data_model_f$p_financialized)
-
-ppc_dens_log_p <- ppc_dens_overlay(data_model_f$p_financialized, 
-                                   pred_to_proportion(pp_log,
-                                                      data_model_f$total),
+ppc_dens_bin_p <- ppc_dens_overlay(data_model_f$p_financialized, 
+                                   pred_to_proportion(pp_bin,
+                                                      data_model_f$total,
+                                                      100),
                                    size = 0.5,
                                    trim=T)
-ppc_dens_log_p
+ppc_dens_bin_p
 
 plot_title <- ggtitle("Posterior distributions for binomial regression",
                       "with medians and 95% intervals")
-mcmc_areas(as.matrix(brms_logistic),
-           pars = covariate_pars,
-           prob = 0.95) + 
+bin_mcmc_coefs <- mcmc_areas(as.matrix(brms_binomial),
+                             pars = covariate_pars,
+                             prob = 0.95) + 
   plot_title +
   vline_0(colour = "orange") +
   theme_bw()
+bin_mcmc_coefs
 
 ## 1.4. Bayesian binomial regression with BYM2 priors --------------------------
 
 ### 1.4.1 Prep model params ----------------------------------------------------
 
 data_model_f$gr <- as.factor(seq.int(nrow(data_model_f)))
-brms_bym_formula <- brmsformula(formula = brms_log_eq, 
+brms_bym_formula <- brmsformula(formula = brms_bin_eq, 
                            family = binomial(link = "logit"),
                            autocor = ~ car(w, gr=gr,type = "bym")) 
 
+rownames(BYM_adj_mat) <-
 stan_data2 = list(w=BYM_adj_mat)
 brms_bym_priors <- get_prior(brms_bym_formula, 
                              data=data_model_f,
@@ -209,42 +225,45 @@ control <- list(max_treedepth = 12,
 
 ### 1.4.2 Run model ------------------------------------------------------------
 
-brms_log_bym <- brm(brms_bym_formula, 
-                    prior=brms_bym_priors,
-                    data = data_model_f, 
-                    data2=stan_data2,
-                    warmup = 2000, 
-                    iter = 8000,
-                    chains = 4, 
-                    inits = "random", 
-                    cores = 4,
-                    seed = 123,
-                    thin = 1,
-                    save_pars = save_pars(all = TRUE),
-                    control = control)
+brms_bym <- brm(brms_bym_formula, 
+                prior=brms_bym_priors,
+                data = data_model_f, 
+                data2=stan_data2,
+                warmup = warmup, 
+                iter = iterations,
+                chains = chains, 
+                inits = inits, 
+                cores = cores,
+                seed = seed,
+                thin = 1,
+                save_pars = save_m_pars,
+                control = control)
 
 ### 1.4.3 Eval model -----------------------------------------------------------
 
-plot(brms_log_bym, combo = c("dens", "trace"))
+plot(brms_bym, combo = c("dens", "trace"))
 
-pp_bym <- posterior_predict(brms_log_bym, ndraws = ndraws)
-pp_bym_mean <- colMeans(pp_bym)
-sse_bym <- get_sse((pp_bym_mean / data_model_f$total)*100,
-                   data_model_f$p_financialized*100)
-sse_bym
+pp_bym <- posterior_predict(brms_bym, ndraws = ndraws)
+get_sse((colMeans(pp_bym) / data_model_f$total),
+        data_model_f$p_financialized)
 
 ppc_dens_bym_p <- ppc_dens_overlay(data_model_f$p_financialized, 
                                    pred_to_proportion(pp_bym, 
-                                                      data_model_f$total),
+                                                      data_model_f$total,
+                                                      100),
                                    size = 0.5,
                                    trim=T)
 ppc_dens_bym_p
 
 plot_title <- ggtitle("Posterior distributions for binomial regression",
                       "with medians and 95% intervals")
-mcmc_areas(as.matrix(brms_log_bym),
-           pars = covariate_pars,
-           prob = 0.8) + plot_title
+bym_mcmc_coefs <- mcmc_areas(as.matrix(brms_bym),
+                             pars = covariate_pars,
+                             prob = 0.95) + 
+  plot_title +
+  vline_0(colour = "orange") +
+  theme_bw()
+bym_mcmc_coefs
 
 # 2. Compare Models ------------------------------------------------------------
 
@@ -255,7 +274,7 @@ coefnames <- c("% renters' housing stress","Median rent",
                "% dwelling in five+ stories", "% pop18-24",
                "Intercept")
 
-mcmcReg(list(brms_linear = brms_linear, brms_logistic, brms_log_bym),  
+mcmcReg(list(brms_linear = brms_linear, brms_logistic, brms_bym),  
         pars = covariate_pars,pointest = "mean",
         coefnames = list(coefnames,coefnames,coefnames))
 
@@ -283,7 +302,7 @@ param_draws_log <- brms_logistic %>%
          `% 1 year mob.` = b_p_mobility_one_year,
          `% pop 18-24` = b_p_18_24)
 
-param_draws_bym <- brms_log_bym %>%
+param_draws_bym <- brms_bym %>%
   as_draws_df() %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
@@ -337,7 +356,7 @@ log_draws_df <- brms_logistic %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'binomial')
 
-bym_draws_df <- brms_log_bym %>%
+bym_draws_df <- brms_bym %>%
   as_tibble() %>%
   dplyr::select(covariate_pars) %>%
   gather(key='estimate', value='coefficient') %>%
