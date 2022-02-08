@@ -378,7 +378,8 @@ groups_ppc_dens <- factor(cbind(rep("linear", 460),
 ppc_dens_p <- ppc_dens_overlay_grouped(y = y_ppc_dens,
                                        yrep = y_pred_ppc_dens,
                                        group = groups_ppc_dens,
-                                       alpha = 0.5) + 
+                                       alpha = 0.3,
+                                       size=0.1) + 
   theme_bw()
 ppc_dens_p$layers <- c(geom_vline(xintercept = 0, 
                                   color = "red",
