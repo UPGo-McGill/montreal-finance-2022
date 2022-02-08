@@ -146,8 +146,6 @@ mcmc_areas(as.matrix(brms_logistic),
            pars = covariate_pars,
            prob = 0.8) + plot_title
 
-#ppc_violin(ppc_log$y, pp_log, alpha = 0, y_draw = "both",
-#           size = 1.5, y_alpha = 0.5, y_jitter = 0.33)
 
  ## Bayesian GLM with BYM2 priors ----------------------------------------------
 
@@ -222,38 +220,78 @@ mcmcReg(list(brms_linear = brms_linear, brms_logistic, brms_log_bym),
 
 linear_draws_df <- brms_linear %>%
   as_tibble() %>%
-  dplyr::select(covariate_pars, -b_Intercept) %>%
+  dplyr::select(covariate_pars) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'linear')
 
 log_draws_df <- brms_logistic %>%
   as_tibble() %>%
-  dplyr::select(covariate_pars, -b_Intercept) %>%
+  dplyr::select(covariate_pars) %>%
   gather(key='estimate', value='coefficient') %>%
-  mutate(model = 'logistic')
+  mutate(model = 'binomial')
 
 bym_draws_df <- brms_log_bym %>%
   as_tibble() %>%
-  dplyr::select(covariate_pars, -b_Intercept) %>%
+  dplyr::select(covariate_pars) %>%
   gather(key='estimate', value='coefficient') %>%
-  mutate(model = 'bym2')
+  mutate(model = 'binomial-bym2')
 
-model_draws_df <- bind_rows(linear_draws_df, log_draws_df, bym_draws_df)
+model_draws_df <- linear_draws_df %>%
+  bind_rows(log_draws_df, bym_draws_df) %>%
+  mutate(model = factor(model, levels = c('linear','binomial', 'binomial-bym2'))) %>% 
+  filter(estimate != "b_Intercept")
 
-ggplot(model_draws_df, aes(x = coefficient, y = estimate)) + 
-  stat_density_ridges(calc_ecdf = TRUE,
-                      quantiles = c(0.025, 0.975),
-                      alpha=0.5,
-                      scale=1) + 
-  #scale_fill_cyclical(
-  #  name = "Model",
-    #values = c("yellow", "orange", "red"),
-    #labels = c("Fair" = "blue", "Good" = "green"),
-  #  guide = "legend"
-  #) +
-  facet_wrap(model~., scales = "free_x") +
+ggplot(model_draws_df, aes(x = coefficient, 
+                           y = estimate,
+                           fill = factor(stat(quantile)))) + 
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = c(0.025, 0.975),
+    alpha=0.5,
+    scale=1.5) + 
+  scale_fill_manual(
+    name = "Probability", 
+    values = alpha(c("#FF0000A0", "#0000FFA0", "#FF0000A0"), 0.5),
+    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
+  ) + 
+  facet_grid(cols = vars(model), scales = "free") +
   geom_vline(xintercept = 0.0, 
-             color="red",
+             color="orange",
              alpha = 0.5) + 
   theme_bw()
-                          
+      
+## Posterior predictions -------------------------------------------------------
+
+ppc_linear <- tibble(
+  y_hat = as.vector(t(pp_linear[1:10,])),
+  y = y_ppc) %>%
+  mutate(model = "linear")
+
+ppc_log <- tibble(
+  y_hat = as.vector(t(pp_log[1:10,])) / counts_ppc,
+  y = y_ppc) %>%
+  mutate(model = "binomial")
+
+ppc_bym <- tibble(
+  y_hat = as.vector(t(pp_bym[1:10,])) / counts_ppc,
+  y = y_ppc) %>%
+  mutate(model = "binomial-bym2")
+
+model_ppc_df <- ppc_linear %>%
+  bind_rows(ppc_log, ppc_bym) %>%
+  mutate(model = factor(model, levels = c('linear','binomial', 'binomial-bym2')),
+         Prediction = ifelse(y_hat < 0, "Less than 0", "Between 0 and 1")) %>%
+  rename(predicted = y_hat, actual = y)
+  
+
+ggplot(model_ppc_df, aes(x = predicted, y = actual, color = Prediction)) + 
+  geom_point(alpha = 0.5) +
+  facet_grid(cols = vars(model)) +
+  geom_hline(yintercept = 0, alpha = 0.5) +
+  geom_vline(xintercept = 0, alpha = 0.5) +
+  scale_colour_manual(labels = c("Between 0 and 1", "Less than 0"), 
+                      values = c("blue", "red")) + 
+  theme_bw()
+
+## Posterior predictions -------------------------------------------------------
