@@ -216,31 +216,7 @@ mcmcReg(list(brms_linear = brms_linear, brms_logistic, brms_log_bym),
 
 # Compare Models ---------------------------------------------------------------
 
-## Posterior draws by coefficient ----------------------------------------------
-
-linear_draws_df <- brms_linear %>%
-  as_tibble() %>%
-  dplyr::select(covariate_pars) %>%
-  gather(key='estimate', value='coefficient') %>%
-  mutate(model = 'linear')
-
-log_draws_df <- brms_logistic %>%
-  as_tibble() %>%
-  dplyr::select(covariate_pars) %>%
-  gather(key='estimate', value='coefficient') %>%
-  mutate(model = 'binomial')
-
-bym_draws_df <- brms_log_bym %>%
-  as_tibble() %>%
-  dplyr::select(covariate_pars) %>%
-  gather(key='estimate', value='coefficient') %>%
-  mutate(model = 'binomial-bym2')
-
-model_draws_df <- linear_draws_df %>%
-  bind_rows(log_draws_df, bym_draws_df) %>%
-  mutate(model = factor(model, levels = c('linear','binomial', 'binomial-bym2'))) 
-#%>% 
-#  filter(estimate != "b_Intercept")
+## Posterior parameter draws ---------------------------------------------------
 
 param_draws_linear <- brms_linear %>% 
   as_draws_df() %>%
@@ -268,7 +244,7 @@ param_draws_bym <- brms_log_bym %>%
   as_draws_df() %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
-          `% renters' in stress` = b_ss_thirty_renter,
+         `% renters' in stress` = b_ss_thirty_renter,
          `median rent` = b_ss_median_rent,
          `% visible minorities` = b_ss_vm,
          `% dwelling in 5+ st.` = b_ss_five_more_storeys,
@@ -282,25 +258,49 @@ combined$model <- rep(c("linear", "binomial", "bym"),
                       each = ncol(param_draws_linear))
 combined <- filter(combined, parameter != 'b_Intercept')
 
-# make the plot using ggplot 
-
 pos <- position_nudge(y = ifelse(
   combined$model == "binomial", 0, ifelse(combined$model == "bym", 0.1, 0.2)))
 ggplot(combined, aes(x = m, y = parameter, color = model)) + 
+  geom_vline(xintercept = 0.0, 
+             color="red",
+             alpha = 0.5,
+             size = 1,
+             lty=5) + 
   geom_linerange(aes(xmin = l, xmax = h), position = pos, size=2)+
   geom_linerange(aes(xmin = ll, xmax = hh), position = pos)+
   geom_linerange(aes(xmin = ll, xmax = hh), position = pos)+
   geom_point(position = pos, size = 2) +
   geom_point(position = pos, color = "black", size = 0.5) +
-  geom_vline(xintercept = 0.0, 
-             color="orange",
-             alpha = 0.5,
-             size = 1) + 
-  scale_colour_manual(labels = c("binomial", "bym", "linear"), 
-                      values = c("red", "green", "blue")) + 
+  scale_colour_manual(labels = c("bym", "binomial", "linear"), 
+                      values = c("#56106EFF", "#BB3754FF", "#F98C0AFF")) + 
   xlab("estimate") + 
   theme_bw()
-       
+
+## Posterior parameter draw ridges ---------------------------------------------
+
+linear_draws_df <- brms_linear %>%
+  as_tibble() %>%
+  dplyr::select(covariate_pars) %>%
+  gather(key='estimate', value='coefficient') %>%
+  mutate(model = 'linear')
+
+log_draws_df <- brms_logistic %>%
+  as_tibble() %>%
+  dplyr::select(covariate_pars) %>%
+  gather(key='estimate', value='coefficient') %>%
+  mutate(model = 'binomial')
+
+bym_draws_df <- brms_log_bym %>%
+  as_tibble() %>%
+  dplyr::select(covariate_pars) %>%
+  gather(key='estimate', value='coefficient') %>%
+  mutate(model = 'binomial-bym2')
+
+model_draws_df <- linear_draws_df %>%
+  bind_rows(log_draws_df, bym_draws_df) %>%
+  mutate(model = factor(model, levels = c('linear','binomial', 'binomial-bym2'))) 
+
+
 ggplot(model_draws_df, aes(x = coefficient, 
                            y = estimate,
                            fill = factor(stat(quantile)))) + 
@@ -355,20 +355,19 @@ ggplot(model_ppc_df, aes(x = predicted, y = actual, color = Prediction)) +
                       values = c("blue", "red")) + 
   theme_bw()
 
-## PPC ECDF Overlay ------------------------------------------------------------
+## PPC Density Overlay ---------------------------------------------------------
 
-y_ppc_ecdf <- rep(data_model_f$p_financialized, 3)
-y_pred_ppc_ecdf <- cbind(pp_linear, 
+y_ppc_dens <- rep(data_model_f$p_financialized, 3)
+y_pred_ppc_dens <- cbind(pp_linear, 
                          pred_to_proportion(pp_log, data_model_f$total), 
                          pred_to_proportion(pp_bym, data_model_f$total))
-groups_ppc_ecdf <- factor(cbind(rep("linear", 460), 
+groups_ppc_dens <- factor(cbind(rep("linear", 460), 
                          rep("binomial", 460),
                          rep("binomial-bym2", 460)), 
                          levels = c('linear','binomial', 'binomial-bym2'))
 
-ppc_ecdf_p <- ppc_dens_overlay_grouped(y = y_ppc_ecdf,
-                                       yrep = y_pred_ppc_ecdf,
-                                       group = groups_ppc_ecdf) +
-  theme_bw()
-ppc_ecdf_p
+ppc_dens_p <- ppc_dens_overlay_grouped(y = y_ppc_dens,
+                                       yrep = y_pred_ppc_dens,
+                                       group = groups_ppc_dens) + theme_bw()
+ppc_dens_p
 
