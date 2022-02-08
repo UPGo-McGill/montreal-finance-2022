@@ -37,7 +37,12 @@ pred_to_proportion <- function(draw_m, totals) {
 get_palette_codes <- function(n) {
   show_col(viridisLite::inferno(n))
   show_col(viridisLite::viridis(n))
+  show_col(viridisLite::turbo(n))
 }
+
+col_3_inferno <- c("#FF0000A0", "#0000FFA0", "#FF0000A0")
+col_3_viridis <- c("#440154ff", "#21908CFF", "#5DC863FF")
+col_2_turbo <- c('#39A4FBFF', '#DB3A07FF')
 
 # Models -----------------------------------------------------------------------
 
@@ -65,8 +70,8 @@ ndraws = 2000
 ## BRMS Linear Regression ------------------------------------------------------
 
 brms_linear_eq <- p_financialized ~ 
-  ss_thirty_renter + ss_median_rent + ss_mobility_one_year + 
-  ss_vm + ss_five_more_storeys + ss_18_24
+  p_thirty_renter + median_rent + p_mobility_one_year + 
+  p_vm + p_five_more_storeys + p_18_24
 lin_formula <- brmsformula(formula = brms_linear_eq) 
 mlinear_priors <- get_prior(lin_formula, data=data_model_f)
 mlinear_priors$prior[c(2:7)] <- "normal(0, 2)"
@@ -266,9 +271,6 @@ combined <- filter(combined, parameter != 'b_Intercept')
 pos <- position_nudge(y = ifelse(
   combined$model == "binomial", 0, ifelse(combined$model == "bym", 0.1, 0.2)))
 
-col_inferno <- c("#FF0000A0", "#0000FFA0", "#FF0000A0")
-col_viridis <- c("#440154ff", "#21908CFF", "#5DC863FF")
-
 ggplot(combined, aes(x = m, y = parameter, color = model)) + 
   geom_vline(xintercept = 0.0, 
              color="red",
@@ -360,7 +362,7 @@ ggplot(model_ppc_df, aes(x = predicted, y = actual, color = Prediction)) +
   geom_hline(yintercept = 0, alpha = 0.5) +
   geom_vline(xintercept = 0, alpha = 0.5) +
   scale_colour_manual(labels = c("Between 0 and 1", "Less than 0"), 
-                      values = c("blue", "red")) + 
+                      values = col_2_turbo) + 
   theme_bw()
 
 ## PPC Density Overlay ---------------------------------------------------------
@@ -378,11 +380,11 @@ groups_ppc_dens <- factor(cbind(rep("linear", 460),
 ppc_dens_p <- ppc_dens_overlay_grouped(y = y_ppc_dens,
                                        yrep = y_pred_ppc_dens,
                                        group = groups_ppc_dens,
-                                       alpha = 0.3,
-                                       size=0.1) + 
+                                       alpha = 0.1,
+                                       size=0.5) + 
   theme_bw()
 ppc_dens_p$layers <- c(geom_vline(xintercept = 0, 
-                                  color = "red",
+                                  color = col_2_turbo[1],
                                   lty = 2), 
                        ppc_dens_p$layers)
 ppc_dens_p
