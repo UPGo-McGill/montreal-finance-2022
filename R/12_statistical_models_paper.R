@@ -34,6 +34,11 @@ pred_to_proportion <- function(draw_m, totals) {
   return(as_prop)
 }
 
+get_palette_codes <- function(n) {
+  show_col(viridisLite::inferno(n))
+  show_col(viridisLite::viridis(n))
+}
+
 # Models -----------------------------------------------------------------------
 
 ## Frequentist Binomial Regression ---------------------------------------------
@@ -260,19 +265,23 @@ combined <- filter(combined, parameter != 'b_Intercept')
 
 pos <- position_nudge(y = ifelse(
   combined$model == "binomial", 0, ifelse(combined$model == "bym", 0.1, 0.2)))
+
+col_inferno <- c("#FF0000A0", "#0000FFA0", "#FF0000A0")
+col_viridis <- c("#440154ff", "#21908CFF", "#5DC863FF")
+
 ggplot(combined, aes(x = m, y = parameter, color = model)) + 
   geom_vline(xintercept = 0.0, 
              color="red",
-             alpha = 0.5,
+             alpha = 1,
              size = 1,
-             lty=5) + 
-  geom_linerange(aes(xmin = l, xmax = h), position = pos, size=2)+
+             lty=2) + 
+  geom_linerange(aes(xmin = l, xmax = h), position = pos, size=2) +
+  geom_linerange(aes(xmin = ll, xmax = hh), position = pos) +
   geom_linerange(aes(xmin = ll, xmax = hh), position = pos)+
-  geom_linerange(aes(xmin = ll, xmax = hh), position = pos)+
-  geom_point(position = pos, size = 2) +
+  geom_point(position = pos, size = 1.5) +
   geom_point(position = pos, color = "black", size = 0.5) +
-  scale_colour_manual(labels = c("bym", "binomial", "linear"), 
-                      values = c("#56106EFF", "#BB3754FF", "#F98C0AFF")) + 
+  scale_colour_manual(labels = c("binomial", "bym", "linear"), 
+                      values = col_viridis) + 
   xlab("estimate") + 
   theme_bw()
 
@@ -300,7 +309,6 @@ model_draws_df <- linear_draws_df %>%
   bind_rows(log_draws_df, bym_draws_df) %>%
   mutate(model = factor(model, levels = c('linear','binomial', 'binomial-bym2'))) 
 
-
 ggplot(model_draws_df, aes(x = coefficient, 
                            y = estimate,
                            fill = factor(stat(quantile)))) + 
@@ -312,7 +320,7 @@ ggplot(model_draws_df, aes(x = coefficient,
     scale=1.5) + 
   scale_fill_manual(
     name = "Probability", 
-    values = alpha(c("#FF0000A0", "#0000FFA0", "#FF0000A0"), 0.5),
+    values = alpha(0.5),
     labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
   ) + 
   facet_grid(cols = vars(model), scales = "free") +
@@ -357,10 +365,11 @@ ggplot(model_ppc_df, aes(x = predicted, y = actual, color = Prediction)) +
 
 ## PPC Density Overlay ---------------------------------------------------------
 
+n_dens_draws = 100
 y_ppc_dens <- rep(data_model_f$p_financialized, 3)
-y_pred_ppc_dens <- cbind(pp_linear, 
-                         pred_to_proportion(pp_log, data_model_f$total), 
-                         pred_to_proportion(pp_bym, data_model_f$total))
+y_pred_ppc_dens <- cbind(pp_linear[1:n_dens_draws,], 
+                         pred_to_proportion(pp_log[1:n_dens_draws,], data_model_f$total), 
+                         pred_to_proportion(pp_bym[1:n_dens_draws,], data_model_f$total))
 groups_ppc_dens <- factor(cbind(rep("linear", 460), 
                          rep("binomial", 460),
                          rep("binomial-bym2", 460)), 
@@ -368,6 +377,12 @@ groups_ppc_dens <- factor(cbind(rep("linear", 460),
 
 ppc_dens_p <- ppc_dens_overlay_grouped(y = y_ppc_dens,
                                        yrep = y_pred_ppc_dens,
-                                       group = groups_ppc_dens) + theme_bw()
+                                       group = groups_ppc_dens,
+                                       alpha = 0.5) + 
+  theme_bw()
+ppc_dens_p$layers <- c(geom_vline(xintercept = 0, 
+                                  color = "red",
+                                  lty = 2), 
+                       ppc_dens_p$layers)
 ppc_dens_p
 
