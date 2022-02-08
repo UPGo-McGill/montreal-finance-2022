@@ -79,9 +79,23 @@ plot_fit(glm_binomial$fitted.values, data_model_f$p_financialized)
 
 ## 1.2 BRMS Linear Regression --------------------------------------------------
 
-### 1.2.1 Prep model params ----------------------------------------------------
+### 1.2.0 General setup --------------------------------------------------------
 
 ndraws = 2000
+
+covariate_pars <- c("b_p_thirty_renter", 
+                    "b_median_rent", 
+                    "b_p_mobility_one_year",
+                    "b_p_vm",
+                    "b_p_five_more_storeys",
+                    "b_p_18_24",
+                    "b_Intercept")
+n_y_rep <- 100
+counts_ppc <- rep(data_model_f$total, n_y_rep)
+y_ppc  <- rep(data_model_f$p_financialized, n_y_rep)
+
+### 1.2.1 Prep model params ----------------------------------------------------
+
 brms_linear_eq <- p_financialized ~ 
   p_thirty_renter + median_rent + p_mobility_one_year + 
   p_vm + p_five_more_storeys + p_18_24
@@ -107,23 +121,13 @@ ppc_linear <- data.frame(y_hat = pp_linear[1:10,],
                          y = data_model_f$p_financialized)
 
 ppc_dens_overlay_linear_p <- ppc_dens_overlay(data_model_f$p_financialized, 
-                                              ppc_linear$y_hat,
+                                              pp_linear,
                                               size = 0.5,
                                               trim=T)
 ppc_dens_overlay_linear_p
 
-pival_linear <- posterior_interval(brms_linear)
-
 plot_title <- ggtitle("Posterior distributions for linear regression",
                       "with medians and 80% intervals")
-covariate_pars <- c("b_p_thirty_renter", 
-                    "b_median_rent", 
-                    "b_p_mobility_one_year",
-                    "b_p_vm",
-                    "b_p_five_more_storeys",
-                    "b_p_18_24",
-                    "b_Intercept")
-
 mcmc_areas(as.matrix(brms_linear),
            pars = covariate_pars,
            prob = 0.95) + 
@@ -177,7 +181,6 @@ ppc_dens_log_p
 
 plot_title <- ggtitle("Posterior distributions for binomial regression",
                       "with medians and 95% intervals")
-
 mcmc_areas(as.matrix(brms_logistic),
            pars = covariate_pars,
            prob = 0.95) + 
@@ -224,18 +227,11 @@ brms_log_bym <- brm(brms_bym_formula,
 
 plot(brms_log_bym, combo = c("dens", "trace"))
 
-mcmc_areas(as.matrix(brms_log_bym),
-           pars = covariate_pars,
-           prob = 0.8) + plot_title
-
 pp_bym <- posterior_predict(brms_log_bym, ndraws = ndraws)
 pp_bym_mean <- colMeans(pp_bym)
 sse_bym <- get_sse((pp_bym_mean / data_model_f$total)*100,
                    data_model_f$p_financialized*100)
 sse_bym
-
-counts_ppc <- rep(data_model_f$total, 10)
-y_ppc  <- rep(data_model_f$p_financialized, 10)
 
 ppc_dens_bym_p <- ppc_dens_overlay(data_model_f$p_financialized, 
                                    pred_to_proportion(pp_bym, 
@@ -243,6 +239,12 @@ ppc_dens_bym_p <- ppc_dens_overlay(data_model_f$p_financialized,
                                    size = 0.5,
                                    trim=T)
 ppc_dens_bym_p
+
+plot_title <- ggtitle("Posterior distributions for binomial regression",
+                      "with medians and 95% intervals")
+mcmc_areas(as.matrix(brms_log_bym),
+           pars = covariate_pars,
+           prob = 0.8) + plot_title
 
 # 2. Compare Models ------------------------------------------------------------
 
@@ -256,7 +258,6 @@ coefnames <- c("% renters' housing stress","Median rent",
 mcmcReg(list(brms_linear = brms_linear, brms_logistic, brms_log_bym),  
         pars = covariate_pars,pointest = "mean",
         coefnames = list(coefnames,coefnames,coefnames))
-
 
 ## 2.2 Posterior parameter draws -----------------------------------------------
 
@@ -355,7 +356,8 @@ ggplot(model_draws_df, aes(x = coefficient,
     scale=1.5) + 
   scale_fill_manual(
     name = "Probability", 
-    values = alpha(0.5),
+    values = alpha(c("#FF0000A0", "#0000FFA0", "#FF0000A0"), 0.5),
+    alpha(0.5),
     labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
   ) + 
   facet_grid(cols = vars(model), scales = "free") +
@@ -366,7 +368,7 @@ ggplot(model_draws_df, aes(x = coefficient,
       
 ## 2.4 Posterior predictions ---------------------------------------------------
 
-n_draws_points = ndraws
+n_draws_points = n_y_rep
 
 ppc_linear <- tibble(
   y_hat = as.vector(t(pp_linear[1:n_draws_points,])),
@@ -398,10 +400,12 @@ ggplot(model_ppc_df, aes(x = predicted, y = actual, color = Prediction)) +
   scale_colour_manual(labels = c("Between 0 and 1", "Less than 0"), 
                       values = col_2_turbo) + 
   theme_bw()
+  #theme_minimal() +
+  #theme(strip.text.x = element_text(size = 15))
 
 ## 2.5 PPC Density Overlay -----------------------------------------------------
 
-n_dens_draws = 100
+n_dens_draws = n_y_rep
 y_ppc_dens <- rep(data_model_f$p_financialized, 3)
 y_pred_ppc_dens <- cbind(pp_linear[1:n_dens_draws,], 
                          pred_to_proportion(pp_log[1:n_dens_draws,], 
@@ -420,7 +424,7 @@ ppc_dens_p <- ppc_dens_overlay_grouped(y = y_ppc_dens,
                                        size=0.5) + 
   theme_bw()
 ppc_dens_p$layers <- c(geom_vline(xintercept = 0, 
-                                  color = col_2_turbo[1],
+                                  color = col_2_turbo[2],
                                   lty = 2), 
                        ppc_dens_p$layers)
 ppc_dens_p
