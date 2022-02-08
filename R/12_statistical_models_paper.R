@@ -93,7 +93,7 @@ inits = "random"
 save_m_pars = save_pars(all = TRUE)
 
 covariate_pars <- c("b_p_thirty_renter", 
-                    "b_median_rent", 
+                    "b_n_median_rent", 
                     "b_p_mobility_one_year",
                     "b_p_vm",
                     "b_p_five_more_storeys",
@@ -106,7 +106,7 @@ y_ppc  <- rep(data_model_f$p_financialized, n_y_rep)
 ### 1.2.1 Prep model params ----------------------------------------------------
 
 brms_linear_eq <- p_financialized ~ 
-  p_thirty_renter + median_rent + p_mobility_one_year + 
+  p_thirty_renter + n_median_rent + p_mobility_one_year + 
   p_vm + p_five_more_storeys + p_18_24
 lin_formula <- brmsformula(formula = brms_linear_eq) 
 mlinear_priors <- get_prior(lin_formula, data=data_model_f)
@@ -155,7 +155,7 @@ lin_mcmc_coefs
 ### 1.3.1 Prep model params ----------------------------------------------------
 
 brms_bin_eq <- n_financialized | trials(total)  ~
-  p_thirty_renter + median_rent + p_mobility_one_year + 
+  p_thirty_renter + n_median_rent + p_mobility_one_year + 
   p_vm + p_five_more_storeys + p_18_24
 brms_bin_formula <- brmsformula(formula = brms_bin_eq, 
                                 family = binomial(link = "logit")) 
@@ -167,7 +167,7 @@ brms_bin_priors$prior[c(2:7)] <- "normal(0, 2)"
 
 brms_binomial<- brm(brms_bin_formula,
                     data = data_model_f, 
-                    prior=brms_log_priors,
+                    prior=brms_bin_priors,
                     warmup = warmup, 
                     iter = iterations, 
                     chains = chains, 
@@ -212,7 +212,6 @@ brms_bym_formula <- brmsformula(formula = brms_bin_eq,
                            family = binomial(link = "logit"),
                            autocor = ~ car(w, gr=gr,type = "bym")) 
 
-rownames(BYM_adj_mat) <-
 stan_data2 = list(w=BYM_adj_mat)
 brms_bym_priors <- get_prior(brms_bym_formula, 
                              data=data_model_f,
@@ -242,6 +241,7 @@ brms_bym <- brm(brms_bym_formula,
 ### 1.4.3 Eval model -----------------------------------------------------------
 
 plot(brms_bym, combo = c("dens", "trace"))
+pairs(brms_bym, pars = covariate_pars)
 
 pp_bym <- posterior_predict(brms_bym, ndraws = ndraws)
 get_sse((colMeans(pp_bym) / data_model_f$total),
@@ -269,10 +269,13 @@ bym_mcmc_coefs
 
 ## 2.1 Output parameter estimates to LATEX -------------------------------------
 
-coefnames <- c("% renters' housing stress","Median rent",
-               "% one year mobility", "% visible minorities",
-               "% dwelling in five+ stories", "% pop18-24",
-               "Intercept")
+coefnames <- c("Intercept",
+               "Median rent",
+               "% renters' housing stress",
+               "% one year mobility", 
+               "% visible minorities",
+               "% dwelling in five+ stories", 
+               "% pop 18-24")
 
 mcmcReg(list(brms_linear = brms_linear, brms_logistic, brms_bym),  
         pars = covariate_pars,pointest = "mean",
@@ -285,18 +288,18 @@ param_draws_linear <- brms_linear %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
          `% renters' in stress` = b_p_thirty_renter,
-         `median rent` = b_p_median_rent,
+         `median rent` = b_median_rent,
          `% visible minorities` = b_p_vm,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
          `% pop 18-24` = b_p_18_24)
 
-param_draws_log <- brms_logistic %>%
+param_draws_log <- brms_binomial %>%
   as_draws_df() %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
          `% renters' in stress` = b_p_thirty_renter,
-         `median rent` = b_p_median_rent,
+         `median rent` = b_median_rent,
          `% visible minorities` = b_p_vm,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
@@ -307,7 +310,7 @@ param_draws_bym <- brms_bym %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
          `% renters' in stress` = b_p_thirty_renter,
-         `median rent` = b_p_median_rent,
+         `median rent` = b_median_rent,
          `% visible minorities` = b_p_vm,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
@@ -336,7 +339,7 @@ point_est_p <- combined %>%
   geom_point(position = pos, size = 1.5) +
   geom_point(position = pos, color = "black", size = 0.5) +
   scale_colour_manual(labels = c("binomial", "bym", "linear"), 
-                      values = col_viridis) + 
+                      values = col_3_viridis) + 
   xlab("estimate") + 
   theme_minimal()
 
@@ -346,26 +349,29 @@ point_est_p
 
 linear_draws_df <- brms_linear %>%
   as_tibble() %>%
+  head(500) %>%
   dplyr::select(covariate_pars) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'linear')
 
-log_draws_df <- brms_logistic %>%
+bin_draws_df <- brms_binomial%>%
   as_tibble() %>%
+  head(500) %>%
   dplyr::select(covariate_pars) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'binomial')
 
 bym_draws_df <- brms_bym %>%
   as_tibble() %>%
+  head(500) %>%
   dplyr::select(covariate_pars) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'binomial-bym2')
 
 model_draws_df <- linear_draws_df %>%
-  bind_rows(log_draws_df, bym_draws_df) %>%
+  bind_rows(bin_draws_df, bym_draws_df) %>%
   mutate(model = factor(model, 
-                        levels = c('linear','binomial', 'binomial-bym2'))) 
+                        levels = c('linear','binomial', 'binomial-bym2')))
 
 ggplot(model_draws_df, aes(x = coefficient, 
                            y = estimate,
@@ -374,15 +380,13 @@ ggplot(model_draws_df, aes(x = coefficient,
     geom = "density_ridges_gradient",
     calc_ecdf = TRUE,
     quantiles = c(0.025, 0.975),
-    alpha=0.5,
-    scale=1.5) + 
+    scale=1) + 
   scale_fill_manual(
     name = "Probability", 
-    values = alpha(c("#FF0000A0", "#0000FFA0", "#FF0000A0"), 0.5),
-    alpha(0.5),
+    values = alpha(c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"), 0.5),
     labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
   ) + 
-  facet_grid(cols = vars(model), scales = "free") +
+  facet_grid(cols = vars(model), scales = "free_x") +
   geom_vline(xintercept = 0.0, 
              color="orange",
              alpha = 0.5) + 
@@ -397,8 +401,8 @@ ppc_linear <- tibble(
   y = y_ppc) %>%
   mutate(model = "linear")
 
-ppc_log <- tibble(
-  y_hat = as.vector(t(pp_log[1:n_draws_points,])) / counts_ppc,
+ppc_bin <- tibble(
+  y_hat = as.vector(t(pp_bin[1:n_draws_points,])) / counts_ppc,
   y = y_ppc) %>%
   mutate(model = "binomial")
 
@@ -408,7 +412,7 @@ ppc_bym <- tibble(
   mutate(model = "binomial-bym2")
 
 model_ppc_df <- ppc_linear %>%
-  bind_rows(ppc_log, ppc_bym) %>%
+  bind_rows(ppc_bin, ppc_bym) %>%
   mutate(model = factor(model, 
                         levels = c('linear','binomial', 'binomial-bym2')),
          Prediction = ifelse(y_hat < 0, "Less than 0", "Between 0 and 1")) %>%
