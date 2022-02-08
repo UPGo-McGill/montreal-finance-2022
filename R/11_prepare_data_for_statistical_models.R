@@ -97,7 +97,7 @@ queen_adj_sf <- st_set_crs(queen_adj_sf, st_crs(data_model_f))
 
 adjacency_plot <- ggplot(st_as_sf(data_model_f)) + 
   geom_sf(fill = 'white', color = 'grey', alpha=1) +
-  geom_sf(data = queen_adj_sf, color = "orange", alpha=0.4) +
+  geom_sf(data = queen_adj_sf, color = "#FF6600", alpha=0.4) +
   theme_void()
 
 adjacency_plot

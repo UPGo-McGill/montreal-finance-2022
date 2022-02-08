@@ -5,6 +5,8 @@
 
 # 0.1 Libraries and options ----------------------------------------------------
 
+source("R/01_startup.R")
+
 library(bayesplot)
 library(BayesPostEst)
 library(brms)
@@ -277,7 +279,7 @@ coefnames <- c("Intercept",
                "% dwelling in five+ stories", 
                "% pop 18-24")
 
-mcmcReg(list(brms_linear = brms_linear, brms_logistic, brms_bym),  
+mcmcReg(list(brms_linear = brms_linear, brms_binomial, brms_bym),  
         pars = covariate_pars,pointest = "mean",
         coefnames = list(coefnames,coefnames,coefnames))
 
@@ -288,7 +290,7 @@ param_draws_linear <- brms_linear %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
          `% renters' in stress` = b_p_thirty_renter,
-         `median rent` = b_median_rent,
+         `median rent` = b_n_median_rent,
          `% visible minorities` = b_p_vm,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
@@ -299,7 +301,7 @@ param_draws_log <- brms_binomial %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
          `% renters' in stress` = b_p_thirty_renter,
-         `median rent` = b_median_rent,
+         `median rent` = b_n_median_rent,
          `% visible minorities` = b_p_vm,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
@@ -310,7 +312,7 @@ param_draws_bym <- brms_bym %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
          `% renters' in stress` = b_p_thirty_renter,
-         `median rent` = b_median_rent,
+         `median rent` = b_n_median_rent,
          `% visible minorities` = b_p_vm,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
@@ -321,7 +323,7 @@ combined <- rbind(mcmc_intervals_data(param_draws_linear),
                   mcmc_intervals_data(param_draws_bym))
 combined$model <- rep(c("linear", "binomial", "bym"), 
                       each = ncol(param_draws_linear))
-combined <- filter(combined, parameter != 'b_Intercept')
+combined <- filter(combined, parameter != 'Intercept')
 
 pos <- position_nudge(y = ifelse(
   combined$model == "binomial", 0, ifelse(combined$model == "bym", 0.1, 0.2)))
@@ -331,7 +333,7 @@ point_est_p <- combined %>%
   geom_vline(xintercept = 0.0, 
              color="red",
              alpha = 1,
-             size = 1,
+             size = 0.3,
              lty=2) + 
   geom_linerange(aes(xmin = l, xmax = h), position = pos, size=2) +
   geom_linerange(aes(xmin = ll, xmax = hh), position = pos) +
@@ -339,7 +341,7 @@ point_est_p <- combined %>%
   geom_point(position = pos, size = 1.5) +
   geom_point(position = pos, color = "black", size = 0.5) +
   scale_colour_manual(labels = c("binomial", "bym", "linear"), 
-                      values = col_3_viridis) + 
+                      values = c( "#3399CC","#A80858","#6EEB83")) + 
   xlab("estimate") + 
   theme_minimal()
 
@@ -371,7 +373,8 @@ bym_draws_df <- brms_bym %>%
 model_draws_df <- linear_draws_df %>%
   bind_rows(bin_draws_df, bym_draws_df) %>%
   mutate(model = factor(model, 
-                        levels = c('linear','binomial', 'binomial-bym2')))
+                        levels = c('linear','binomial', 'binomial-bym2'))) %>%
+  filter(estimate != "b_Intercept")
 
 ggplot(model_draws_df, aes(x = coefficient, 
                            y = estimate,
@@ -383,7 +386,7 @@ ggplot(model_draws_df, aes(x = coefficient,
     scale=1) + 
   scale_fill_manual(
     name = "Probability", 
-    values = alpha(c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"), 0.5),
+    values = alpha(c("#FF0000A0", "#3399CC", "#FF0000A0"), 0.5),
     labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
   ) + 
   facet_grid(cols = vars(model), scales = "free_x") +
@@ -425,7 +428,7 @@ model_ppc_df_p <- model_ppc_df%>%
   geom_hline(yintercept = 0, alpha = 0.5) +
   geom_vline(xintercept = 0, alpha = 0.5) +
   scale_colour_manual(labels = c("Between 0 and 1", "Less than 0"), 
-                      values = col_2_turbo) + 
+                      values = c("#3399CC", "#FF0000A0")) + 
   theme_bw()
   #theme_minimal() +
   #theme(strip.text.x = element_text(size = 15))
@@ -435,15 +438,18 @@ model_ppc_df_p
 ## 2.5 PPC Density Overlay -----------------------------------------------------
 
 n_dens_draws = n_y_rep
+ncols = ncol(pp_bym)
 y_ppc_dens <- rep(data_model_f$p_financialized, 3)
 y_pred_ppc_dens <- cbind(pp_linear[1:n_dens_draws,], 
-                         pred_to_proportion(pp_log[1:n_dens_draws,], 
-                                            data_model_f$total), 
-                         pred_to_proportion(pp_bym[1:n_dens_draws,], 
-                                            data_model_f$total))
-groups_ppc_dens <- factor(cbind(rep("linear", 460), 
-                         rep("binomial", 460),
-                         rep("binomial-bym2", 460)), 
+                         pred_to_proportion(pp_bin, 
+                                            data_model_f$total,
+                                            n_dens_draws), 
+                         pred_to_proportion(pp_bym, 
+                                            data_model_f$total,
+                                            n_dens_draws))
+groups_ppc_dens <- factor(cbind(rep("linear", ncols), 
+                         rep("binomial", ncols),
+                         rep("binomial-bym2", ncols)), 
                          levels = c('linear','binomial', 'binomial-bym2'))
 
 ppc_dens_p <- ppc_dens_overlay_grouped(y = y_ppc_dens,
