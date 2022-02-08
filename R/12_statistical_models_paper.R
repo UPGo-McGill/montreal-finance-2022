@@ -304,7 +304,8 @@ combined <- filter(combined, parameter != 'b_Intercept')
 pos <- position_nudge(y = ifelse(
   combined$model == "binomial", 0, ifelse(combined$model == "bym", 0.1, 0.2)))
 
-ggplot(combined, aes(x = m, y = parameter, color = model)) + 
+point_est_p <- combined %>%
+  ggplot(aes(x = m, y = parameter, color = model)) + 
   geom_vline(xintercept = 0.0, 
              color="red",
              alpha = 1,
@@ -318,7 +319,9 @@ ggplot(combined, aes(x = m, y = parameter, color = model)) +
   scale_colour_manual(labels = c("binomial", "bym", "linear"), 
                       values = col_viridis) + 
   xlab("estimate") + 
-  theme_bw()
+  theme_minimal()
+
+point_est_p
 
 ## 2.3 Posterior parameter draw ridges -----------------------------------------
 
@@ -392,7 +395,8 @@ model_ppc_df <- ppc_linear %>%
          Prediction = ifelse(y_hat < 0, "Less than 0", "Between 0 and 1")) %>%
   rename(predicted = y_hat, actual = y)
 
-ggplot(model_ppc_df, aes(x = predicted, y = actual, color = Prediction)) + 
+model_ppc_df_p <- model_ppc_df%>%
+  ggplot(aes(x = predicted, y = actual, color = Prediction)) + 
   geom_point(alpha = 0.5) +
   facet_grid(cols = vars(model)) +
   geom_hline(yintercept = 0, alpha = 0.5) +
@@ -402,6 +406,8 @@ ggplot(model_ppc_df, aes(x = predicted, y = actual, color = Prediction)) +
   theme_bw()
   #theme_minimal() +
   #theme(strip.text.x = element_text(size = 15))
+
+model_ppc_df_p
 
 ## 2.5 PPC Density Overlay -----------------------------------------------------
 
@@ -429,3 +435,13 @@ ppc_dens_p$layers <- c(geom_vline(xintercept = 0,
                        ppc_dens_p$layers)
 ppc_dens_p
 
+## 2.6 Save plots --------------------------------------------------------------
+
+ggsave("output/figures/point_est_p.pdf", plot = point_est_p, width = 8, height = 5, 
+       units = "in", useDingbats = FALSE)
+
+ggsave("output/figures/model_ppc.pdf", plot = model_ppc_df_p, width = 8, height = 5, 
+       units = "in", useDingbats = FALSE)
+
+ggsave("output/figures/ppc_dens.pdf", plot = ppc_dens_p, width = 8, height = 5, 
+       units = "in", useDingbats = FALSE)
