@@ -64,13 +64,31 @@ data_model_f <- data_model %>%
   na.exclude() %>%
   filter(!st_is_empty(.)) %>%
   st_make_valid() %>%
-  filter(total != 0)  %>%
-  filter(!GeoUID %in% CTs_to_drop)
+  filter(total != 0)
 
 queen_adj <- poly2nb(as(data_model_f, 'Spatial'))
 queen_adj_listw <- nb2listw(queen_adj) 
 BYM_adj_mat <- nb2mat(queen_adj, style='B',zero.policy=TRUE)
 isSymmetric(BYM_adj_mat,check.attributes=FALSE)
+rownames(BYM_adj_mat) <- data_model_f$GeoUID
+colnames(BYM_adj_mat) <- data_model_f$GeoUID
+
+# Add edges between Nun's Island and Verdun
+BYM_adj_mat["4620072.00","4620317.02"] <- 1
+BYM_adj_mat["4620317.02","4620072.00"] <- 1
+
+# Add edges between Île Bizard and Sainte-Geneviève
+BYM_adj_mat["4620540.00","4620550.04"] <- 1
+BYM_adj_mat["4620550.04","4620540.00"] <- 1
+
+#BYM_adj_mat["4620540.00","4620550.03"] <- 1
+#BYM_adj_mat["4620550.03","4620540.00"] <- 1
+
+#BYM_adj_mat["4620540.00","4620550.02"] <- 1
+#BYM_adj_mat["4620550.02","4620540.00"] <- 1
+
+rownames(BYM_adj_mat) <- seq(1:nrow(BYM_adj_mat))
+colnames(BYM_adj_mat) <- seq(1:ncol(BYM_adj_mat))
 
 BYM_adj_list = mat2listw(BYM_adj_mat) 
 queen_adj_sf <- as(nb2lines(BYM_adj_list$neighbours, 
@@ -78,9 +96,11 @@ queen_adj_sf <- as(nb2lines(BYM_adj_list$neighbours,
 queen_adj_sf <- st_set_crs(queen_adj_sf, st_crs(data_model_f))
 
 adjacency_plot <- ggplot(st_as_sf(data_model_f)) + 
-  geom_sf(fill = 'white', color = 'grey70') +
-  geom_sf(data = queen_adj_sf, color = "black") +
+  geom_sf(fill = 'white', color = 'grey', alpha=1) +
+  geom_sf(data = queen_adj_sf, color = "orange", alpha=0.4) +
   theme_void()
+
+adjacency_plot
 
 # Save plots for paper ---------------------------------------------------------
 
