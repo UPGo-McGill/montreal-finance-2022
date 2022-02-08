@@ -240,16 +240,20 @@ bym_draws_df <- brms_log_bym %>%
 
 model_draws_df <- bind_rows(linear_draws_df, log_draws_df, bym_draws_df)
 
-ggplot(model_draws_df, aes(x = coefficient, y = estimate, fill = model)) + 
+ggplot(model_draws_df, aes(x = coefficient, y = estimate)) + 
   stat_density_ridges(calc_ecdf = TRUE,
                       quantiles = c(0.025, 0.975),
                       alpha=0.5,
                       scale=1) + 
-  scale_fill_cyclical(
-    name = "Model",
-    values = c("yellow", "orange", "red"),
-    labels = c("Fair" = "blue", "Good" = "green"),
-    guide = "legend"
-  ) +
+  #scale_fill_cyclical(
+  #  name = "Model",
+    #values = c("yellow", "orange", "red"),
+    #labels = c("Fair" = "blue", "Good" = "green"),
+  #  guide = "legend"
+  #) +
+  facet_wrap(model~., scales = "free_x") +
+  geom_vline(xintercept = 0.0, 
+             color="red",
+             alpha = 0.5) + 
   theme_bw()
-                         
+                          
