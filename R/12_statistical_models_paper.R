@@ -326,7 +326,7 @@ combined$model <- rep(c("linear", "binomial", "bym"),
 combined <- filter(combined, parameter != 'Intercept')
 
 pos <- position_nudge(y = ifelse(
-  combined$model == "binomial", 0, ifelse(combined$model == "bym", 0.1, 0.2)))
+  combined$model == "bym", 0, ifelse(combined$model == "binomial", 0.1, 0.2)))
 
 point_est_p <- combined %>%
   ggplot(aes(x = m, y = parameter, color = model)) + 
@@ -338,10 +338,10 @@ point_est_p <- combined %>%
   geom_linerange(aes(xmin = l, xmax = h), position = pos, size=2) +
   geom_linerange(aes(xmin = ll, xmax = hh), position = pos) +
   geom_linerange(aes(xmin = ll, xmax = hh), position = pos)+
-  geom_point(position = pos, size = 1.5) +
-  geom_point(position = pos, color = "black", size = 0.5) +
-  scale_colour_manual(labels = c("binomial", "bym", "linear"), 
-                      values = c( "#3399CC","#A80858","#6EEB83")) + 
+  geom_point(position = pos, size = 1, alpha = 10) +
+  scale_colour_manual(breaks = c("linear", "binomial", "bym"),
+                      labels = c("linear", "binomial", "bym"), 
+                      values = c( "#3399CC","#CC6699", "#FF6600")) + 
   xlab("estimate") + 
   theme_minimal()
 
@@ -459,7 +459,7 @@ ppc_dens_p <- ppc_dens_overlay_grouped(y = y_ppc_dens,
                                        size=0.5) + 
   theme_bw()
 ppc_dens_p$layers <- c(geom_vline(xintercept = 0, 
-                                  color = col_2_turbo[2],
+                                  color = "#FF6600",
                                   lty = 2), 
                        ppc_dens_p$layers)
 ppc_dens_p
