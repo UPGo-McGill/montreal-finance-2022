@@ -9,6 +9,7 @@ library(tidyverse)
 # Load data --------------------------------------------------------------------
 
 qs::qload("output/datasets.qsm")
+qs::qload("output/geometry.qsm")
 
 # Helper functions -------------------------------------------------------------
 
@@ -95,10 +96,27 @@ queen_adj_sf <- as(nb2lines(BYM_adj_list$neighbours,
                         coords = coordinates(as(data_model_f, 'Spatial'))), 'sf')
 queen_adj_sf <- st_set_crs(queen_adj_sf, st_crs(data_model_f))
 
-adjacency_plot <- ggplot(st_as_sf(data_model_f)) + 
+adjacency_plot <- 
+  data_model_f %>%
+  st_as_sf() |>
+  ggplot() +
+  geom_sf(data = province, colour = "transparent", fill = "grey93") +
   geom_sf(fill = 'white', color = 'grey', alpha=1) +
-  geom_sf(data = queen_adj_sf, color = "#FF6600", alpha=0.4) +
-  theme_void()
+  geom_sf(data = queen_adj_sf, 
+          color = "#FF6600", 
+          alpha=0.4,
+          show.legend = TRUE) +
+  scale_fill_stepsn(name= "Financialized rental units", 
+                    colors = col_palette[c(4, 1, 2, 9)],
+                    breaks = c(0.15, 0.30, 0.45, 0.60),
+                    #values = c(0.2, 0.4, 0.6),
+                    na.value = "grey80",
+                    limits = c(0, 0.75), oob = scales::squish, 
+                    labels = scales::percent) +
+  gg_bbox(boroughs) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 7))
 
 adjacency_plot
 
