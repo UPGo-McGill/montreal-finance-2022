@@ -279,9 +279,10 @@ coefnames <- c("Intercept",
                "% dwelling in five+ stories", 
                "% pop 18-24")
 
-mcmcReg(list(brms_linear = brms_linear, brms_binomial, brms_bym),  
+mcmcReg(list(brms_linear, brms_binomial, brms_bym),  
         pars = covariate_pars,pointest = "mean",
-        coefnames = list(coefnames,coefnames,coefnames))
+        coefnames = list(coefnames,coefnames,coefnames),
+        file = "output/figures/latex/brms_models")
 
 ## 2.2 Posterior parameter draws -----------------------------------------------
 
