@@ -340,9 +340,11 @@ point_est_p <- combined %>%
   geom_linerange(aes(xmin = ll, xmax = hh), position = pos)+
   geom_point(position = pos, size = 1, alpha = 10) +
   scale_colour_manual(breaks = c("linear", "binomial", "bym"),
-                      labels = c("linear", "binomial", "bym"), 
-                      values = c( "#3399CC","#CC6699", "#FF6600")) + 
-  xlab("estimate") + 
+                      labels = c("linear", "binomial", "bym2"), 
+                      values = c( "#3399CC","#CC6699", "#FF6600"),
+                      name="Model") + 
+  xlab("Estimate") + 
+  ylab("Parameter") + 
   theme_minimal()
 
 point_est_p
@@ -427,10 +429,13 @@ model_ppc_df_p <- model_ppc_df%>%
   facet_grid(cols = vars(model)) +
   geom_hline(yintercept = 0, alpha = 0.5) +
   geom_vline(xintercept = 0, alpha = 0.5) +
-  scale_colour_manual(labels = c("Between 0 and 1", "Less than 0"), 
-                      values = c("#3399CC", "#FF0000A0")) + 
-  theme_bw()
-  #theme_minimal() +
+  scale_colour_manual(labels = c("0 to 1", "Less than 0"), 
+                      values = c("#3399CC", "#FF0000A0"),
+                      name = "Fitted") + 
+  theme_bw() +
+  xlab("Fitted") +
+  ylab("Actual")
+  #theme_minimal()
   #theme(strip.text.x = element_text(size = 15))
 
 model_ppc_df_p
@@ -456,13 +461,18 @@ ppc_dens_p <- ppc_dens_overlay_grouped(y = y_ppc_dens,
                                        yrep = y_pred_ppc_dens,
                                        group = groups_ppc_dens,
                                        alpha = 0.1,
-                                       size=0.5) + 
+                                       size=0.2) + 
+  scale_colour_manual(
+    labels = c("actual", "fitted"),
+    values = c("black", "#3399CC"),
+    name = "Distributions") +
   theme_bw()
 ppc_dens_p$layers <- c(geom_vline(xintercept = 0, 
                                   color = "#FF6600",
                                   lty = 2), 
                        ppc_dens_p$layers)
 ppc_dens_p
+color_scheme_set(scheme = "blue")
 
 ## 2.6 Save plots --------------------------------------------------------------
 
