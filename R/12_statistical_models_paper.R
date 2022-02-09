@@ -351,24 +351,47 @@ point_est_p
 
 ## 2.3 Posterior parameter draw ridges -----------------------------------------
 
+n_head = 1000
+
 linear_draws_df <- brms_linear %>%
   as_tibble() %>%
-  head(500) %>%
+  head(n_head) %>%
   dplyr::select(covariate_pars) %>%
+  rename(Intercept = b_Intercept,
+         `% renters' in stress` = b_p_thirty_renter,
+         `median rent` = b_n_median_rent,
+         `% visible minorities` = b_p_vm,
+         `% dwelling in 5+ st.` = b_p_five_more_storeys,
+         `% 1 year mob.` = b_p_mobility_one_year,
+         `% pop 18-24` = b_p_18_24) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'linear')
 
 bin_draws_df <- brms_binomial%>%
   as_tibble() %>%
-  head(500) %>%
+  head(n_head) %>%
   dplyr::select(covariate_pars) %>%
+  rename(Intercept = b_Intercept,
+         `% renters' in stress` = b_p_thirty_renter,
+         `median rent` = b_n_median_rent,
+         `% visible minorities` = b_p_vm,
+         `% dwelling in 5+ st.` = b_p_five_more_storeys,
+         `% 1 year mob.` = b_p_mobility_one_year,
+         `% pop 18-24` = b_p_18_24) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'binomial')
 
 bym_draws_df <- brms_bym %>%
   as_tibble() %>%
-  head(500) %>%
+  head(n_head) %>%
   dplyr::select(covariate_pars) %>%
+  rename(Intercept = b_Intercept,
+         `% renters' in stress` = b_p_thirty_renter,
+         `median rent` = b_n_median_rent,
+         `% visible minorities` = b_p_vm,
+         `% dwelling in 5+ st.` = b_p_five_more_storeys,
+         `% 1 year mob.` = b_p_mobility_one_year,
+         `% pop 18-24` = b_p_18_24) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'binomial-bym2')
 
@@ -376,7 +399,7 @@ model_draws_df <- linear_draws_df %>%
   bind_rows(bin_draws_df, bym_draws_df) %>%
   mutate(model = factor(model, 
                         levels = c('linear','binomial', 'binomial-bym2'))) %>%
-  filter(estimate != "b_Intercept")
+  filter(estimate != "Intercept")
 
 ggplot(model_draws_df, aes(x = coefficient, 
                            y = estimate,
@@ -395,7 +418,9 @@ ggplot(model_draws_df, aes(x = coefficient,
   geom_vline(xintercept = 0.0, 
              color="orange",
              alpha = 0.5) + 
-  theme_bw()
+  theme_bw() +
+  ylab("Estimate") +
+  xlab("Coefficient")
       
 ## 2.4 Posterior predictions ---------------------------------------------------
 
