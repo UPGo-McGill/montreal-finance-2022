@@ -314,27 +314,28 @@ ggsave("output/figure_4.pdf", plot = fig_4, width = 8, height = 5, units = "in",
 # First part
 cluster_averages |> 
   select(cluster, p_financialized, median_rent, asking_rent, p_thirty_renter,
-         med_hh_income, average_value_dwellings, p_renter, p_condo) |> 
+         med_hh_income, average_value_dwellings, p_renter, p_condo, avg_cons_year) |> 
+  mutate(avg_cons_year = round(avg_cons_year, 0)) |>
   mutate(across(starts_with("p_"), scales::percent, 0.1),
          across(c(median_rent, asking_rent, med_hh_income, 
                   average_value_dwellings), scales::dollar, 1)) |> 
   set_names(c("Cluster", "Financialized rental units", "Median rent",
               "Average asking rent", "Renters in housing stress", 
               "After-tax median HH income", "Average dwelling value",
-              "Renter households", "Condo households")) |> 
+              "Renter households", "Condo households", "Average year of construction")) |> 
   gt::gt()
 
 # Second part
   cluster_averages |> 
     select(cluster, p_five_storeys, p_mobility_one_year, p_mobility_five_years,
-           p_vm, p_immigrants, d_downtown, change_renter_dwellings, p_18_24) |> 
+           p_vm, p_immigrants, d_downtown, change_renter_dwellings, p_18_24, p_65_plus) |> 
   mutate(across(starts_with("p_"), scales::percent, 0.1),
-         d_downtown = scales::comma(as.numeric(d_downtown)),
-         change_renter_dwellings = scales::comma(change_renter_dwellings)) |> 
+         d_downtown = round(as.numeric(d_downtown/1000), 1),
+         change_renter_dwellings = round(change_renter_dwellings, 0)) |> 
   set_names(c("Cluster", "Households in 5+ storey buildings",
               "Households having moved in the past year",
               "Households having moved in the past 5 years",
-              "Visible minorities", "Immigrants", "Distance from downtown (m)",
-              "Change in renter dwellings", "Population aged 18-24")) |> 
+              "Visible minorities", "Immigrants", "Distance from downtown (km)",
+              "Change in renter dwellings", "Population aged 18-24", "Population aged 65+")) |> 
   gt::gt()
 
