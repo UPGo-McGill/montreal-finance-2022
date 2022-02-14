@@ -20,7 +20,7 @@ data_kmeans <-
   select(p_thirty_renter, median_rent, average_value_dwellings, p_condo, avg_cons_year,
          p_renter, p_repairs, p_vm, p_immigrants, p_mobility_one_year,
          p_mobility_five_years, p_five_more_storeys, med_hh_income, p_18_24, p_65_plus,
-         change_renter_dwellings, distance_dt, asking_rent) |> 
+         distance_dt, asking_rent) |> 
   na.omit() |> 
   scale() |> 
   as_tibble()
@@ -120,8 +120,8 @@ sum_func <- function(data) {
       p_mobility_five_years, parent_mobility_five_years, na.rm = TRUE),
     d_downtown = mean(distance_dt, na.rm = TRUE),
     asking_rent = weighted.mean(asking_rent, parent_renter, na.rm = TRUE),
-    change_renter_dwellings = weighted.mean(change_renter_dwellings, 
-                                            parent_renter, na.rm = TRUE),
+    #change_renter_dwellings = weighted.mean(change_renter_dwellings, 
+    #                                        parent_renter, na.rm = TRUE),
     average_value_dwellings = weighted.mean(average_value_dwellings, 
                                             parent_owner, na.rm = TRUE),
     p_five_storeys = weighted.mean(p_five_more_storeys, parent_dwellings, 
