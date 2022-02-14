@@ -513,3 +513,21 @@ ggsave("output/figures/model_ppc.pdf", plot = model_ppc_df_p, width = 8, height 
 
 ggsave("output/figures/ppc_dens.pdf", plot = ppc_dens_p, width = 8, height = 5, 
        units = "in", useDingbats = FALSE)
+## ---
+
+bym_log_lik <- log_lik(brms_bym)
+
+bym_rcar_variance <- brms_bym %>%
+  spread_draws(rcar[1:466]) %>%
+  group_by(`1:466`, .chain) %>%
+  summarize(variance = var(rcar))
+
+bym_rcar <- brms_bym %>%
+  spread_draws(rcar[1:466]) %>%
+  mean_qi() %>%
+  left_join(bym_rho_variance) %>%
+  rename(lattice_keys = `1:466`) %>%
+  arrange(desc(lattice_keys)) %>%
+  left_join(rowid_to_column(data_model_f, "lattice_keys")) %>%
+  mutate(rcarabove_0 = ifelse(rcar < 0, 0, rcar))
+
