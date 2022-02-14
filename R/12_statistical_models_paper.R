@@ -126,6 +126,7 @@ brms_linear <- brm(formula = lin_formula,
                    cores = cores,
                    inits = inits,
                    save_pars = save_m_pars)
+saveRDS(brms_linear, "output/models/brms_linear.rds")
 
 ### 1.2.3 Eval model -----------------------------------------------------------
 
@@ -177,6 +178,7 @@ brms_binomial<- brm(brms_bin_formula,
                     cores = cores,
                     seed = seed,
                     save_pars = save_m_pars)
+saveRDS(brms_binomial, "output/models/brms_binomial.rds")
 
 ### 1.3.3 Eval model -----------------------------------------------------------
 
@@ -239,6 +241,7 @@ brms_bym <- brm(brms_bym_formula,
                 thin = 1,
                 save_pars = save_m_pars,
                 control = control)
+saveRDS(brms_bym, "output/models/brms_bym.rds")
 
 ### 1.4.3 Eval model -----------------------------------------------------------
 
