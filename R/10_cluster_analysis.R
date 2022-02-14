@@ -17,10 +17,10 @@ set.seed(2022)
 data_kmeans <- 
   data_CT |> 
   st_drop_geometry() |> 
-  select(p_thirty_renter, median_rent, average_value_dwellings, p_condo,
+  select(p_thirty_renter, median_rent, average_value_dwellings, p_condo, avg_cons_year,
          p_renter, p_repairs, p_vm, p_immigrants, p_mobility_one_year,
-         p_mobility_five_years, p_five_more_storeys, med_hh_income, p_18_24,
-         change_renter_dwellings, distance_dt, asking_rent) |> 
+         p_mobility_five_years, p_five_more_storeys, med_hh_income, p_18_24, p_65_plus,
+         distance_dt, asking_rent) |> 
   na.omit() |> 
   scale() |> 
   as_tibble()
@@ -28,7 +28,7 @@ data_kmeans <-
 
 # Determine number of clusters --------------------------------------------
 
-fviz_nbclust(data_kmeans, kmeans, method = "silhouette")
+fviz_nbclust(data_kmeans, kmeans, method = "gap_stat")
 data_kmeans |>
   clusGap(FUN = kmeans, nstart = 25, K.max = 10, B = 50) |> 
   fviz_gap_stat()
@@ -47,10 +47,10 @@ data_CT <-
   na.omit() |> 
   mutate(cluster = k_result$cluster,
          cluster = case_when(
-           cluster == 1 ~ "Suburban non-financialized",
-           cluster == 2 ~ "Immigrant periphery non-financialized",
+           cluster == 1 ~ "Gentrifying non-financialized",
+           cluster == 2 ~ "Suburban non-financialized",
            cluster == 3 ~ "Precarious and student financialized",
-           cluster == 4 ~ "Gentrifying non-financialized",
+           cluster == 4 ~ "Immigrant periphery non-financialized",
            cluster == 5 ~ "Affluent financialized"), 
          cluster = factor(cluster, levels = c(
            "Precarious and student financialized", "Affluent financialized",
@@ -91,6 +91,15 @@ CT_parent_vectors <-
   as_tibble() |> 
   st_as_sf(agr = "constant")
 
+CT_parent_vectors <- 
+  data_building |> 
+  st_drop_geometry() |>
+  group_by(GeoUID) |>
+  summarise(parent_cons_year = n()) |>
+  left_join(CT_parent_vectors, ., by = "GeoUID") |>
+  relocate(parent_cons_year, .after = parent_age) |>
+  st_as_sf()
+
 sum_func <- function(data) {
   
   summarize(
@@ -111,15 +120,17 @@ sum_func <- function(data) {
       p_mobility_five_years, parent_mobility_five_years, na.rm = TRUE),
     d_downtown = mean(distance_dt, na.rm = TRUE),
     asking_rent = weighted.mean(asking_rent, parent_renter, na.rm = TRUE),
-    change_renter_dwellings = weighted.mean(change_renter_dwellings, 
-                                            parent_renter, na.rm = TRUE),
+    #change_renter_dwellings = weighted.mean(change_renter_dwellings, 
+    #                                        parent_renter, na.rm = TRUE),
     average_value_dwellings = weighted.mean(average_value_dwellings, 
                                             parent_owner, na.rm = TRUE),
     p_five_storeys = weighted.mean(p_five_more_storeys, parent_dwellings, 
                                    na.rm = TRUE),
     med_hh_income = weighted.mean(med_hh_income, parent_hh_income, 
                                   na.rm = TRUE),
-    p_18_24 = weighted.mean(p_18_24, parent_age, na.rm = TRUE)) |> 
+    p_18_24 = weighted.mean(p_18_24, parent_age, na.rm = TRUE),
+    p_65_plus = weighted.mean(p_65_plus, parent_age, na.rm = TRUE),
+    avg_cons_year = weighted.mean(avg_cons_year, parent_cons_year, na.rm = TRUE)) |> 
     st_drop_geometry()
   
 }
