@@ -17,6 +17,8 @@ source("R/01_startup.R")
 library(bayesplot)
 library(BayesPostEst)
 library(brms)
+library(ggridges)
+library(scales)
 library(stats)
 library(tidyr)
 library(tidybayes)
@@ -329,9 +331,9 @@ param_draws_bym <- brms_bym %>%
          `% 1 year mob.` = b_p_mobility_one_year,
          `% pop 18-24` = b_p_18_24)
 
-combined <- rbind(mcmc_intervals_data(param_draws_linear),
-                  mcmc_intervals_data(param_draws_log),
-                  mcmc_intervals_data(param_draws_bym))
+combined <- rbind(mcmc_intervals_data(param_draws_linear, prob = 0.95, prob_outer = 1),
+                  mcmc_intervals_data(param_draws_log, prob = 0.95, prob_outer = 1),
+                  mcmc_intervals_data(param_draws_bym, prob = 0.95, prob_outer = 1))
 combined$model <- rep(c("linear", "binomial", "bym"), 
                       each = ncol(param_draws_linear))
 combined <- filter(combined, parameter != 'Intercept')
@@ -412,7 +414,8 @@ model_draws_df <- linear_draws_df %>%
                         levels = c('linear','binomial', 'binomial-bym2'))) %>%
   filter(estimate != "Intercept")
 
-ggplot(model_draws_df, aes(x = coefficient, 
+p_density_ridges <- 
+  ggplot(model_draws_df, aes(x = coefficient, 
                            y = estimate,
                            fill = factor(stat(quantile)))) + 
   stat_density_ridges(
@@ -422,20 +425,22 @@ ggplot(model_draws_df, aes(x = coefficient,
     scale=1) + 
   scale_fill_manual(
     name = "Probability", 
-    values = alpha(c("#FF0000A0", "#3399CC", "#FF0000A0"), 0.5),
+    values = alpha(c("#FF6600", "#3399CC", "#FF6600"), 0.5),
     labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
   ) + 
   facet_grid(cols = vars(model), scales = "free_x") +
   geom_vline(xintercept = 0.0, 
-             color="orange",
-             alpha = 0.5) + 
+             color="black",
+             alpha = 0.8,
+             lty = 3) + 
   theme_bw() +
   ylab("Estimate") +
   xlab("Coefficient")
-      
+p_density_ridges      
+
 ## 2.4 Posterior predictions ---------------------------------------------------
 
-n_draws_points = n_y_rep
+n_draws_points = 50
 
 ppc_linear <- tibble(
   y_hat = as.vector(t(pp_linear[1:n_draws_points,])),
@@ -463,16 +468,14 @@ model_ppc_df_p <- model_ppc_df%>%
   ggplot(aes(x = predicted, y = actual, color = Prediction)) + 
   geom_point(alpha = 0.5) +
   facet_grid(cols = vars(model)) +
-  geom_hline(yintercept = 0, alpha = 0.5) +
-  geom_vline(xintercept = 0, alpha = 0.5) +
+  geom_hline(yintercept = 0, alpha = 0.8) +
+  geom_vline(xintercept = 0, alpha = 0.8) +
   scale_colour_manual(labels = c("0 to 1", "Less than 0"), 
-                      values = c("#3399CC", "#FF0000A0"),
+                      values = c("#074387", "#FF6600"),
                       name = "Fitted") + 
   theme_bw() +
   xlab("Fitted") +
   ylab("Actual")
-  #theme_minimal()
-  #theme(strip.text.x = element_text(size = 15))
 
 model_ppc_df_p
 
@@ -500,12 +503,13 @@ ppc_dens_p <- ppc_dens_overlay_grouped(y = y_ppc_dens,
                                        size=0.2) + 
   scale_colour_manual(
     labels = c("actual", "fitted"),
-    values = c("black", "#3399CC"),
+    values = c("#A80858", "#D87B91"),
     name = "Distributions") +
   theme_bw()
 ppc_dens_p$layers <- c(geom_vline(xintercept = 0, 
-                                  color = "#FF6600",
-                                  lty = 2), 
+                                  color = "black",
+                                  lty = 2,
+                                  alpha = 0.5), 
                        ppc_dens_p$layers)
 ppc_dens_p
 color_scheme_set(scheme = "blue")
@@ -535,10 +539,12 @@ AABB
 AABB
 CCCC"
 
-colors <- scales::col_bin(palette = col_palette[c(1, 4, 2, 9)], 
-                          domain=NULL,
-                          bins=11)
+colors <- col_bin(palette = col_palette[c(1, 4, 2, 9)], 
+                  domain=NULL,
+                  bins=11)
 col_vals <- colors(c(1,2,3,4,5,6))
+scale_round <- function(x) sprintf("%.0f", x)
+show_col(col_vals)
 
 rcar_map <- 
   bym_rcar %>%
@@ -553,8 +559,8 @@ rcar_map <-
                     colors = alpha(col_vals, 0.8),
                     breaks = c(-4,-2, 0, 2, 4),
                     na.value = "grey80",
-                    limits = c(-6, 6), oob = scales::squish, 
-                    labels = scales::number) +
+                    limits = c(-6, 6), oob = squish, 
+                    labels = scale_round) +
   gg_bbox(boroughs) +
   theme_void() +
   theme(legend.position = "bottom",
@@ -575,14 +581,16 @@ rcar_hist <-
   ggplot(aes(round(rcar,2), fill = fill, color=fill)) +
   geom_histogram(bins = 30, alpha=rcar_alpha) +
   scale_x_continuous(name = NULL,
-                     labels = scales::number,
-                     breaks = scales::breaks_extended(n=18),
-                     limits = c(-8,8)) +
+                     labels = scale_round,
+                     breaks = breaks_extended(n=14),
+                     limits = c(-7,7)) +
   scale_y_continuous(name = NULL) +
   scale_fill_manual(values = col_vals, 
                     guide = NULL) +
   scale_color_manual(values = col_vals, 
                      guide = NULL) +
+  geom_vline(xintercept = 0, color = "black") +
+  geom_hline(yintercept = 0, color = "black") +
   theme_minimal()
 rcar_hist
 
@@ -596,6 +604,9 @@ rcar_fig
 ## 2.7 Save plots --------------------------------------------------------------
 
 ggsave("output/figures/point_est_p.pdf", plot = point_est_p, width = 8, height = 5, 
+       units = "in", useDingbats = FALSE)
+
+ggsave("output/figures/p_density_ridges.pdf", plot = p_density_ridges, width = 8, height = 5, 
        units = "in", useDingbats = FALSE)
 
 ggsave("output/figures/model_ppc.pdf", plot = model_ppc_df_p, width = 8, height = 5, 
