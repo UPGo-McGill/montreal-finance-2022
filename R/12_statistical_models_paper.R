@@ -505,9 +505,6 @@ color_scheme_set(scheme = "blue")
 
 ## 2.6 BYM2 CAR terms plotted and mapped ---------------------------------------
 
-bin_log_lik <- log_lik(brms_binomial)
-bym_log_lik <- log_lik(brms_bym)
-
 bym_rcar_variance <- brms_bym %>%
   spread_draws(rcar[1:466]) %>%
   group_by(`1:466`) %>%
