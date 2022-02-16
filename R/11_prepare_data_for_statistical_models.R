@@ -1,14 +1,17 @@
 # Load libraries ---------------------------------------------------------------
 
+source("01_startup.R")
+
 require("parallelly")
 require("spdep")
 require("spatialreg")
 library(sf)
+library(spdep)
 library(tidyverse)
 
 # Load data --------------------------------------------------------------------
 
-qs::qload("output/datasets.qsm")
+qs::qload("output/data.qsm")
 qs::qload("output/geometry.qsm")
 
 # Helper functions -------------------------------------------------------------
@@ -22,7 +25,7 @@ stdize <- function(x, ...) {(x - min(x, ...)) / (max(x, ...) - min(x, ...))}
 
 # Process data -----------------------------------------------------------------
 
-data_model <- dataset_CT %>%
+data_model <- data_CT %>%
   dplyr::select(p_financialized, 
                 p_thirty_renter, 
                 median_rent, 
@@ -30,10 +33,13 @@ data_model <- dataset_CT %>%
                 p_vm,
                 p_five_more_storeys,
                 p_18_24,
+                p_built_after_2005,
+                average_age,
                 n_financialized,
                 total,
                 GeoUID) %>%
   mutate(n_median_rent = stdize(median_rent, na.rm=TRUE),
+         n_average_age = stdize(average_age, na.rm=TRUE),
          log_financialized = ifelse(p_financialized == 0, 
                                     p_financialized, 
                                     log(p_financialized*100)),
