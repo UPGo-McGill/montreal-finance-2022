@@ -1,6 +1,13 @@
 
 #### 12 Statistical models for paper ###########################################
 
+# TODO
+
+# - Fix latex output
+# - Change covariates after update from Cloe
+# - Rerun models
+# - Visualize outcome and save outputs
+
 # 0. Preamble ------------------------------------------------------------------
 
 # 0.1 Libraries and options ----------------------------------------------------
@@ -587,4 +594,7 @@ ggsave("output/figures/model_ppc.pdf", plot = model_ppc_df_p, width = 8, height 
        units = "in", useDingbats = FALSE)
 
 ggsave("output/figures/ppc_dens.pdf", plot = ppc_dens_p, width = 8, height = 5, 
+       units = "in", useDingbats = FALSE)
+
+ggsave("output/figures/rcar_fig.pdf", plot = rcar_fig, width = 8, height = 5, 
        units = "in", useDingbats = FALSE)
