@@ -1,6 +1,13 @@
 
 #### 12 Statistical models for paper ###########################################
 
+# TODO
+
+# - Fix latex output
+# - Change covariates after update from Cloe
+# - Rerun models
+# - Visualize outcome and save outputs
+
 # 0. Preamble ------------------------------------------------------------------
 
 # 0.1 Libraries and options ----------------------------------------------------
@@ -503,7 +510,90 @@ ppc_dens_p$layers <- c(geom_vline(xintercept = 0,
 ppc_dens_p
 color_scheme_set(scheme = "blue")
 
-## 2.6 Save plots --------------------------------------------------------------
+## 2.6 BYM2 CAR terms plotted and mapped ---------------------------------------
+
+bym_rcar_variance <- brms_bym %>%
+  spread_draws(rcar[1:466]) %>%
+  group_by(`1:466`) %>%
+  summarize(variance = var(rcar))
+
+bym_rcar <- brms_bym %>%
+  spread_draws(rcar[1:466]) %>%
+  mean_qi() %>%
+  left_join(bym_rcar_variance) %>%
+  rename(lattice_keys = `1:466`) %>%
+  arrange(desc(lattice_keys)) %>%
+  left_join(rowid_to_column(data_model_f, "lattice_keys")) %>%
+  mutate(rcarabove_0 = ifelse(rcar < 0, 0, rcar))
+
+rcar_alpha <- 0.8
+rcar_layout <- "
+AABB
+AABB
+AABB
+AABB
+AABB
+CCCC"
+
+colors <- scales::col_bin(palette = col_palette[c(1, 4, 2, 9)], 
+                          domain=NULL,
+                          bins=11)
+col_vals <- colors(c(1,2,3,4,5,6))
+
+rcar_map <- 
+  bym_rcar %>%
+  st_as_sf() |>
+  ggplot() +
+  geom_sf(data = province, colour = "transparent", fill = "grey93") +
+  geom_sf(fill = 'white', color = 'grey', alpha=1) +
+  geom_sf(aes(fill = rcar), 
+          alpha=rcar_alpha,
+          color = "transparent") +
+  scale_fill_stepsn(name= "CAR term by census tract", 
+                    colors = alpha(col_vals, 0.8),
+                    breaks = c(-4,-2, 0, 2, 4),
+                    na.value = "grey80",
+                    limits = c(-6, 6), oob = scales::squish, 
+                    labels = scales::number) +
+  gg_bbox(boroughs) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 7))
+rcar_map
+
+rcar_hist <-
+  bym_rcar |> 
+  mutate(rcar = round(rcar,2)) %>%
+  mutate(fill = case_when(
+    rcar >= 4 ~ "6",
+    rcar >= 2 ~ "5",
+    rcar >= 0 ~ "4",
+    rcar >= -2 ~ "3",
+    rcar >= -4 ~ "2",
+    rcar >= -6 ~ "1"
+  )) |> 
+  ggplot(aes(round(rcar,2), fill = fill, color=fill)) +
+  geom_histogram(bins = 30, alpha=rcar_alpha) +
+  scale_x_continuous(name = NULL,
+                     labels = scales::number,
+                     breaks = scales::breaks_extended(n=18),
+                     limits = c(-8,8)) +
+  scale_y_continuous(name = NULL) +
+  scale_fill_manual(values = col_vals, 
+                    guide = NULL) +
+  scale_color_manual(values = col_vals, 
+                     guide = NULL) +
+  theme_minimal()
+rcar_hist
+
+rcar_fig <- rcar_map + rcar_hist + guide_area() + 
+  theme(legend.position = "bottom") + 
+  plot_layout(design = rcar_layout, guides = "collect") + 
+  plot_annotation(tag_levels = "A") 
+
+rcar_fig
+
+## 2.7 Save plots --------------------------------------------------------------
 
 ggsave("output/figures/point_est_p.pdf", plot = point_est_p, width = 8, height = 5, 
        units = "in", useDingbats = FALSE)
@@ -513,21 +603,6 @@ ggsave("output/figures/model_ppc.pdf", plot = model_ppc_df_p, width = 8, height 
 
 ggsave("output/figures/ppc_dens.pdf", plot = ppc_dens_p, width = 8, height = 5, 
        units = "in", useDingbats = FALSE)
-## ---
 
-bym_log_lik <- log_lik(brms_bym)
-
-bym_rcar_variance <- brms_bym %>%
-  spread_draws(rcar[1:466]) %>%
-  group_by(`1:466`, .chain) %>%
-  summarize(variance = var(rcar))
-
-bym_rcar <- brms_bym %>%
-  spread_draws(rcar[1:466]) %>%
-  mean_qi() %>%
-  left_join(bym_rho_variance) %>%
-  rename(lattice_keys = `1:466`) %>%
-  arrange(desc(lattice_keys)) %>%
-  left_join(rowid_to_column(data_model_f, "lattice_keys")) %>%
-  mutate(rcarabove_0 = ifelse(rcar < 0, 0, rcar))
-
+ggsave("output/figures/rcar_fig.pdf", plot = rcar_fig, width = 8, height = 5, 
+       units = "in", useDingbats = FALSE)
