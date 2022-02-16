@@ -12,7 +12,7 @@
 
 # 0.1 Libraries and options ----------------------------------------------------
 
-source("R/01_startup.R")
+source("01_startup.R")
 
 library(bayesplot)
 library(BayesPostEst)
@@ -112,8 +112,8 @@ covariate_pars <- c("b_p_thirty_renter",
                     "b_p_five_more_storeys",
                     #"b_p_18_24",
                     "b_Intercept",
-                    "n_average_age",
-                    "p_built_after_2005")
+                    "b_n_average_age",
+                    "b_p_built_after_2005")
 
 n_y_rep <- 100
 counts_ppc <- rep(data_model_f$total, n_y_rep)
