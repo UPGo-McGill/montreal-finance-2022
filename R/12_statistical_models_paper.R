@@ -544,11 +544,11 @@ rcar_map <-
   geom_sf(aes(fill = rcar), 
           alpha=rcar_alpha,
           color = "transparent") +
-  scale_fill_stepsn(name= "CAR terms per census tract", 
-                    colors = alpha(col_palette[c(4, 1, 2, 9)], 0.8),
-                    breaks = c(-2, 0, 2, 4),
+  scale_fill_stepsn(name= "CAR term by census tract", 
+                    colors = alpha(col_palette[c(1, 4, 2, 9)], 0.8),
+                    breaks = c(-4,-2, 0, 2, 4),
                     na.value = "grey80",
-                    limits = c(-4, 8), oob = scales::squish, 
+                    limits = c(-6, 6), oob = scales::squish, 
                     labels = scales::number) +
   gg_bbox(boroughs) +
   theme_void() +
@@ -556,6 +556,11 @@ rcar_map <-
         legend.text = element_text(size = 7))
 rcar_map
 
+colors <- scales::col_bin(palette = col_palette[c(1, 4, 2, 9)], 
+                          domain=NULL,
+                          bins=11)
+col_vals <- colors(c(1,2,3,4,5,6))
+                   
 rcar_hist <-
   bym_rcar |> 
   mutate(rcar = round(rcar,0)) %>%
@@ -564,17 +569,17 @@ rcar_hist <-
     rcar >= 2 ~ "4",
     rcar >= 0 ~ "3",
     rcar >= -2 ~ "2",
-    rcar >= -4 ~ "1"
+    rcar >= -6 ~ "1"
   )) |> 
-  ggplot(aes(rcar, fill = fill, color=fill)) +
-  geom_histogram(bins = 10, alpha=rcar_alpha) +
+  ggplot(aes(round(rcar,0), fill = fill, color=fill)) +
+  geom_histogram(bins = 11, alpha=rcar_alpha) +
   scale_x_continuous(name = NULL, 
-                     #"CAR terms per census tract",
+                     #"CAR term by census tract",
                      labels = scales::number) +
   scale_y_continuous(name = NULL) +
-  scale_fill_manual(values = colors(c(1,2,3,4,5)), 
+  scale_fill_manual(values = col_vals, 
                     guide = NULL) +
-  scale_color_manual(values = colors(c(1,2,3,4,5)), 
+  scale_color_manual(values = col_vals, 
                      guide = NULL) +
   theme_minimal()
 rcar_hist
