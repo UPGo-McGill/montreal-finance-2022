@@ -3,11 +3,6 @@
 
 # TODO
 
-# - Change covariates after update from Cloe
-# - Rerun models
-# - Fix latex output
-# - Visualize outcome and save outputs
-
 # 0. Preamble ------------------------------------------------------------------
 
 # 0.1 Libraries and options ----------------------------------------------------
@@ -105,14 +100,14 @@ cores = 4
 inits = "random"
 save_m_pars = save_pars(all = TRUE)
 
-covariate_pars <- c("b_p_thirty_renter", 
+covariate_pars <- c("b_Intercept",
                     "b_n_median_rent", 
-                    "b_p_mobility_one_year",
+                    "b_p_thirty_renter",
+                    "b_n_average_age",
                     "b_p_vm",
+                    "b_p_mobility_one_year",
                     "b_p_five_more_storeys",
                     #"b_p_18_24",
-                    "b_Intercept",
-                    "b_n_average_age",
                     "b_p_built_after_2005")
 
 n_y_rep <- 100
@@ -122,13 +117,13 @@ y_ppc  <- rep(data_model_f$p_financialized, n_y_rep)
 ### 1.2.1 Prep model params ----------------------------------------------------
 
 brms_linear_eq <- p_financialized ~ 
-  p_thirty_renter + 
   n_median_rent + 
-  p_mobility_one_year + 
-  p_vm + 
-  p_five_more_storeys + 
-  #p_18_24  +
+  p_thirty_renter + 
   n_average_age +
+  #p_18_24  +
+  p_vm + 
+  p_mobility_one_year + 
+  p_five_more_storeys + 
   p_built_after_2005
 
 lin_formula <- brmsformula(formula = brms_linear_eq) 
@@ -179,13 +174,13 @@ lin_mcmc_coefs
 ### 1.3.1 Prep model params ----------------------------------------------------
 
 brms_bin_eq <- n_financialized | trials(total)  ~
-  p_thirty_renter + 
   n_median_rent + 
-  p_mobility_one_year + 
-  p_vm + 
-  p_five_more_storeys + 
-  #p_18_24 +
+  p_thirty_renter + 
   n_average_age +
+  #p_18_24  +
+  p_vm + 
+  p_mobility_one_year + 
+  p_five_more_storeys + 
   p_built_after_2005
 
 brms_bin_formula <- brmsformula(formula = brms_bin_eq, 
@@ -305,17 +300,17 @@ bym_mcmc_coefs
 coefnames <- c("Intercept",
                "Median rent",
                "% renters' housing stress",
-               "% one year mobility", 
+               "% average age", 
                "% visible minorities",
+               "% one year mobility", 
                "% dwelling in five+ stories", 
                #"% pop 18-24",
-               "% average age", 
                "% units built after 2005")
 
 mcmcReg(list(brms_linear, brms_binomial, brms_bym),  
         pars = covariate_pars,pointest = "mean",
         coefnames = list(coefnames,coefnames,coefnames),
-        file = "output/figures/latex/brms_models")
+        )
 
 ## 2.2 Posterior parameter draws -----------------------------------------------
 
@@ -323,40 +318,40 @@ param_draws_linear <- brms_linear %>%
   as_draws_df() %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
-         `% renters' in stress` = b_p_thirty_renter,
          `median rent` = b_n_median_rent,
+         `% renters' in stress` = b_p_thirty_renter,
+         `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
          #`% pop 18-24` = b_p_18_24,
-         `average age` = b_n_average_age, 
-         `% units built after 2005` = p_built_after_2005)
+         `% dwelling in 5+ st.` = b_p_five_more_storeys,
+         `% units built after 2005` = b_p_built_after_2005)
 
 param_draws_log <- brms_binomial %>%
   as_draws_df() %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
-         `% renters' in stress` = b_p_thirty_renter,
          `median rent` = b_n_median_rent,
+         `% renters' in stress` = b_p_thirty_renter,
+         `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
          #`% pop 18-24` = b_p_18_24,
-         `average age` = b_n_average_age, 
-         `% units built after 2005` = p_built_after_2005)
+         `% dwelling in 5+ st.` = b_p_five_more_storeys,
+         `% units built after 2005` = b_p_built_after_2005)
 
 param_draws_bym <- brms_bym %>%
   as_draws_df() %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
-         `% renters' in stress` = b_p_thirty_renter,
          `median rent` = b_n_median_rent,
+         `% renters' in stress` = b_p_thirty_renter,
+         `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
          #`% pop 18-24` = b_p_18_24,
-         `average age` = b_n_average_age, 
-         `% units built after 2005` = p_built_after_2005)
+         `% dwelling in 5+ st.` = b_p_five_more_storeys,
+         `% units built after 2005` = b_p_built_after_2005)
 
 combined <- rbind(mcmc_intervals_data(param_draws_linear, prob = 0.95, prob_outer = 1),
                   mcmc_intervals_data(param_draws_log, prob = 0.95, prob_outer = 1),
@@ -380,11 +375,12 @@ point_est_p <- combined %>%
   geom_linerange(aes(xmin = ll, xmax = hh), position = pos)+
   geom_point(position = pos, size = 1, alpha = 10) +
   scale_colour_manual(breaks = c("linear", "binomial", "bym"),
-                      labels = c("linear", "binomial", "bym2"), 
+                      labels = c("linear", "binomial", "binomial-bym2"), 
                       values = c( "#3399CC","#CC6699", "#FF6600"),
                       name="Model") + 
   xlab("Estimate") + 
   ylab("Parameter") + 
+  scale_y_discrete(limits=rev) + 
   theme_minimal()
 
 point_est_p
@@ -398,14 +394,14 @@ linear_draws_df <- brms_linear %>%
   head(n_head) %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
-         `% renters' in stress` = b_p_thirty_renter,
          `median rent` = b_n_median_rent,
+         `% renters' in stress` = b_p_thirty_renter,
+         `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
          #`% pop 18-24` = b_p_18_24,
-         `average age` = b_n_average_age, 
-         `% units built after 2005` = p_built_after_2005) %>%
+         `% dwelling in 5+ st.` = b_p_five_more_storeys,
+         `% units built after 2005` = b_p_built_after_2005) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'linear')
 
@@ -414,14 +410,14 @@ bin_draws_df <- brms_binomial%>%
   head(n_head) %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
-         `% renters' in stress` = b_p_thirty_renter,
          `median rent` = b_n_median_rent,
+         `% renters' in stress` = b_p_thirty_renter,
+         `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
          #`% pop 18-24` = b_p_18_24,
-         `average age` = b_n_average_age, 
-         `% units built after 2005` = p_built_after_2005) %>%
+         `% dwelling in 5+ st.` = b_p_five_more_storeys,
+         `% units built after 2005` = b_p_built_after_2005) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'binomial')
 
@@ -430,14 +426,14 @@ bym_draws_df <- brms_bym %>%
   head(n_head) %>%
   dplyr::select(covariate_pars) %>%
   rename(Intercept = b_Intercept,
-         `% renters' in stress` = b_p_thirty_renter,
          `median rent` = b_n_median_rent,
+         `% renters' in stress` = b_p_thirty_renter,
+         `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
          #`% pop 18-24` = b_p_18_24,
-         `average age` = b_n_average_age, 
-         `% units built after 2005` = p_built_after_2005) %>%
+         `% dwelling in 5+ st.` = b_p_five_more_storeys,
+         `% units built after 2005` = b_p_built_after_2005) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'binomial-bym2')
 
@@ -473,7 +469,7 @@ p_density_ridges
 
 ## 2.4 Posterior predictions ---------------------------------------------------
 
-n_draws_points = 50
+n_draws_points = n_y_rep
 
 ppc_linear <- tibble(
   y_hat = as.vector(t(pp_linear[1:n_draws_points,])),
@@ -633,6 +629,7 @@ rcar_fig <- rcar_map + rcar_hist + guide_area() +
   plot_annotation(tag_levels = "A") 
 
 rcar_fig
+
 
 ## 2.7 Save plots --------------------------------------------------------------
 
