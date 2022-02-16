@@ -515,19 +515,78 @@ ggsave("output/figures/ppc_dens.pdf", plot = ppc_dens_p, width = 8, height = 5,
        units = "in", useDingbats = FALSE)
 ## ---
 
+bin_log_lik <- log_lik(brms_binomial)
 bym_log_lik <- log_lik(brms_bym)
 
 bym_rcar_variance <- brms_bym %>%
   spread_draws(rcar[1:466]) %>%
-  group_by(`1:466`, .chain) %>%
+  group_by(`1:466`) %>%
   summarize(variance = var(rcar))
 
 bym_rcar <- brms_bym %>%
   spread_draws(rcar[1:466]) %>%
   mean_qi() %>%
-  left_join(bym_rho_variance) %>%
+  left_join(bym_rcar_variance) %>%
   rename(lattice_keys = `1:466`) %>%
   arrange(desc(lattice_keys)) %>%
   left_join(rowid_to_column(data_model_f, "lattice_keys")) %>%
   mutate(rcarabove_0 = ifelse(rcar < 0, 0, rcar))
 
+rcar_alpha <- 0.8
+rcar_layout <- "
+AABB
+AABB
+AABB
+AABB
+AABB
+CCCC"
+
+rcar_map <- 
+  bym_rcar %>%
+  st_as_sf() |>
+  ggplot() +
+  geom_sf(data = province, colour = "transparent", fill = "grey93") +
+  geom_sf(fill = 'white', color = 'grey', alpha=1) +
+  geom_sf(aes(fill = rcar), 
+          alpha=rcar_alpha,
+          color = "transparent") +
+  scale_fill_stepsn(name= "CAR terms per census tract", 
+                    colors = alpha(col_palette[c(4, 1, 2, 9)], 0.8),
+                    breaks = c(-2, 0, 2, 4),
+                    na.value = "grey80",
+                    limits = c(-4, 8), oob = scales::squish, 
+                    labels = scales::number) +
+  gg_bbox(boroughs) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 7))
+rcar_map
+
+rcar_hist <-
+  bym_rcar |> 
+  mutate(rcar = round(rcar,0)) %>%
+  mutate(fill = case_when(
+    rcar >= 4 ~ "5",
+    rcar >= 2 ~ "4",
+    rcar >= 0 ~ "3",
+    rcar >= -2 ~ "2",
+    rcar >= -4 ~ "1"
+  )) |> 
+  ggplot(aes(rcar, fill = fill, color=fill)) +
+  geom_histogram(bins = 10, alpha=rcar_alpha) +
+  scale_x_continuous(name = NULL, 
+                     #"CAR terms per census tract",
+                     labels = scales::number) +
+  scale_y_continuous(name = NULL) +
+  scale_fill_manual(values = colors(c(1,2,3,4,5)), 
+                    guide = NULL) +
+  scale_color_manual(values = colors(c(1,2,3,4,5)), 
+                     guide = NULL) +
+  theme_minimal()
+rcar_hist
+rcar_fig <- rcar_map + rcar_hist + guide_area() + 
+  theme(legend.position = "bottom") + 
+  plot_layout(design = rcar_layout, guides = "collect") + 
+  plot_annotation(tag_levels = "A") 
+
+rcar_fig
