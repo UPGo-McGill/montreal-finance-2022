@@ -535,6 +535,11 @@ AABB
 AABB
 CCCC"
 
+colors <- scales::col_bin(palette = col_palette[c(1, 4, 2, 9)], 
+                          domain=NULL,
+                          bins=11)
+col_vals <- colors(c(1,2,3,4,5,6))
+
 rcar_map <- 
   bym_rcar %>%
   st_as_sf() |>
@@ -545,7 +550,7 @@ rcar_map <-
           alpha=rcar_alpha,
           color = "transparent") +
   scale_fill_stepsn(name= "CAR term by census tract", 
-                    colors = alpha(col_palette[c(1, 4, 2, 9)], 0.8),
+                    colors = alpha(col_vals, 0.8),
                     breaks = c(-4,-2, 0, 2, 4),
                     na.value = "grey80",
                     limits = c(-6, 6), oob = scales::squish, 
@@ -556,26 +561,23 @@ rcar_map <-
         legend.text = element_text(size = 7))
 rcar_map
 
-colors <- scales::col_bin(palette = col_palette[c(1, 4, 2, 9)], 
-                          domain=NULL,
-                          bins=11)
-col_vals <- colors(c(1,2,3,4,5,6))
-                   
 rcar_hist <-
   bym_rcar |> 
-  mutate(rcar = round(rcar,0)) %>%
+  mutate(rcar = round(rcar,2)) %>%
   mutate(fill = case_when(
-    rcar >= 4 ~ "5",
-    rcar >= 2 ~ "4",
-    rcar >= 0 ~ "3",
-    rcar >= -2 ~ "2",
+    rcar >= 4 ~ "6",
+    rcar >= 2 ~ "5",
+    rcar >= 0 ~ "4",
+    rcar >= -2 ~ "3",
+    rcar >= -4 ~ "2",
     rcar >= -6 ~ "1"
   )) |> 
-  ggplot(aes(round(rcar,0), fill = fill, color=fill)) +
-  geom_histogram(bins = 11, alpha=rcar_alpha) +
-  scale_x_continuous(name = NULL, 
-                     #"CAR term by census tract",
-                     labels = scales::number) +
+  ggplot(aes(round(rcar,2), fill = fill, color=fill)) +
+  geom_histogram(bins = 30, alpha=rcar_alpha) +
+  scale_x_continuous(name = NULL,
+                     labels = scales::number,
+                     breaks = scales::breaks_extended(n=18),
+                     limits = c(-8,8)) +
   scale_y_continuous(name = NULL) +
   scale_fill_manual(values = col_vals, 
                     guide = NULL) +
@@ -583,6 +585,7 @@ rcar_hist <-
                      guide = NULL) +
   theme_minimal()
 rcar_hist
+
 rcar_fig <- rcar_map + rcar_hist + guide_area() + 
   theme(legend.position = "bottom") + 
   plot_layout(design = rcar_layout, guides = "collect") + 
