@@ -51,12 +51,16 @@ data_CT <-
   data_building |> 
   st_drop_geometry() |>
   group_by(GeoUID) |>
-  summarise(avg_cons_year = round(mean(annee_construction, na.rm = TRUE), 0)) |>
-  left_join(data_CT, ., by = "GeoUID") |>
-  relocate(avg_cons_year, .after = p_financialized) |>
+  summarise(n_after_2005 = sum(annee_construction >= 2005, na.rm = TRUE),
+            n_buildings = n(),
+            p_built_after_2005 = n_after_2005 / n_buildings,
+            .groups = "drop") |>
+  select(-n_after_2005, -n_buildings) |>
+  left_join(data_CT, by = "GeoUID") |>
+  relocate(p_built_after_2005, .after = p_financialized) |>
   st_as_sf()
 
-
+  
 # Save output -------------------------------------------------------------
 
 qsavem(data_building, data_CT, file = "output/data.qsm", 
