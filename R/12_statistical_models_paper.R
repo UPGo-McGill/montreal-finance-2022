@@ -503,17 +503,7 @@ ppc_dens_p$layers <- c(geom_vline(xintercept = 0,
 ppc_dens_p
 color_scheme_set(scheme = "blue")
 
-## 2.6 Save plots --------------------------------------------------------------
-
-ggsave("output/figures/point_est_p.pdf", plot = point_est_p, width = 8, height = 5, 
-       units = "in", useDingbats = FALSE)
-
-ggsave("output/figures/model_ppc.pdf", plot = model_ppc_df_p, width = 8, height = 5, 
-       units = "in", useDingbats = FALSE)
-
-ggsave("output/figures/ppc_dens.pdf", plot = ppc_dens_p, width = 8, height = 5, 
-       units = "in", useDingbats = FALSE)
-## ---
+## 2.6 BYM2 CAR terms plotted and mapped ---------------------------------------
 
 bin_log_lik <- log_lik(brms_binomial)
 bym_log_lik <- log_lik(brms_bym)
@@ -590,3 +580,14 @@ rcar_fig <- rcar_map + rcar_hist + guide_area() +
   plot_annotation(tag_levels = "A") 
 
 rcar_fig
+
+## 2.7 Save plots --------------------------------------------------------------
+
+ggsave("output/figures/point_est_p.pdf", plot = point_est_p, width = 8, height = 5, 
+       units = "in", useDingbats = FALSE)
+
+ggsave("output/figures/model_ppc.pdf", plot = model_ppc_df_p, width = 8, height = 5, 
+       units = "in", useDingbats = FALSE)
+
+ggsave("output/figures/ppc_dens.pdf", plot = ppc_dens_p, width = 8, height = 5, 
+       units = "in", useDingbats = FALSE)
