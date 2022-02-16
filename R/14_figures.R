@@ -321,7 +321,7 @@ cluster_averages |>
   set_names(c("Cluster", "Financialized rental units", "Median rent",
               "Average asking rent", "Renters in housing stress", 
               "After-tax median HH income", "Average dwelling value",
-              "Renter households", "Condo households", "Rental buildings built after 2005")) |> 
+              "Renter households", "Condo households", "Rental units built after 2005")) |> 
   gt::gt()
 
 # Second part
