@@ -45,12 +45,12 @@ fviz_cluster(k_result, data = data_kmeans)
 data_CT <- 
   data_CT |> 
   na.omit() |> 
-  mutate(cluster = k_result$cluster, 
+  mutate(cluster = k_result$cluster,
          cluster = case_when(
            cluster == 1 ~ "Suburban non-financialized",
-           cluster == 2 ~ "Affluent financialized",
-           cluster == 3 ~ "Precarious and student financialized",
-           cluster == 4 ~ "Immigrant periphery non-financialized",
+           cluster == 2 ~ "Precarious and student financialized",
+           cluster == 3 ~ "Immigrant periphery non-financialized",
+           cluster == 4 ~ "Affluent financialized",
            cluster == 5 ~ "Gentrifying non-financialized"), 
          cluster = factor(cluster, levels = c(
            "Precarious and student financialized", "Affluent financialized",
@@ -95,7 +95,7 @@ CT_parent_vectors <-
   data_building |> 
   st_drop_geometry() |>
   group_by(GeoUID) |>
-  summarise(parent_cons_year = n()) |>
+  summarise(parent_cons_year = sum(number_rental_units)) |>
   left_join(CT_parent_vectors, ., by = "GeoUID") |>
   relocate(parent_cons_year, .after = parent_age) |>
   st_as_sf()

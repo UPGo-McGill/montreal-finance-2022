@@ -51,11 +51,11 @@ data_CT <-
   data_building |> 
   st_drop_geometry() |>
   group_by(GeoUID) |>
-  summarise(n_after_2005 = sum(annee_construction >= 2005, na.rm = TRUE),
-            n_buildings = n(),
-            p_built_after_2005 = n_after_2005 / n_buildings,
+  summarise(n_after_2005 = sum(number_rental_units[annee_construction >= 2005], na.rm = TRUE),
+            n_rentals = sum(number_rental_units),
+            p_built_after_2005 = n_after_2005 / n_rentals,
             .groups = "drop") |>
-  select(-n_after_2005, -n_buildings) |>
+  select(-n_after_2005, -n_rentals) |>
   left_join(data_CT, by = "GeoUID") |>
   relocate(p_built_after_2005, .after = p_financialized) |>
   st_as_sf()
