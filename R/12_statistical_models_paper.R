@@ -3,9 +3,9 @@
 
 # TODO
 
-# - Fix latex output
 # - Change covariates after update from Cloe
 # - Rerun models
+# - Fix latex output
 # - Visualize outcome and save outputs
 
 # 0. Preamble ------------------------------------------------------------------
@@ -68,12 +68,14 @@ col_2_turbo <- c('#39A4FBFF', '#DB3A07FF')
 
 ### 1.1.1 Prep model params ----------------------------------------------------
 
-glm_eq <- cbind(n_financialized, total) ~ ss_thirty_renter + 
-  ss_median_rent + 
-  ss_mobility_one_year + 
-  ss_vm + 
-  ss_five_more_storeys + 
-  ss_18_24
+glm_eq <- cbind(n_financialized, total) ~ p_thirty_renter + 
+  n_median_rent + 
+  p_mobility_one_year + 
+  p_vm + 
+  p_five_more_storeys + 
+  #p_18_24 +
+  n_average_age +
+  p_built_after_2005
 
 ### 1.1.2 Run model ------------------------------------------------------------
 
@@ -108,8 +110,11 @@ covariate_pars <- c("b_p_thirty_renter",
                     "b_p_mobility_one_year",
                     "b_p_vm",
                     "b_p_five_more_storeys",
-                    "b_p_18_24",
-                    "b_Intercept")
+                    #"b_p_18_24",
+                    "b_Intercept",
+                    "n_average_age",
+                    "p_built_after_2005")
+
 n_y_rep <- 100
 counts_ppc <- rep(data_model_f$total, n_y_rep)
 y_ppc  <- rep(data_model_f$p_financialized, n_y_rep)
@@ -117,8 +122,15 @@ y_ppc  <- rep(data_model_f$p_financialized, n_y_rep)
 ### 1.2.1 Prep model params ----------------------------------------------------
 
 brms_linear_eq <- p_financialized ~ 
-  p_thirty_renter + n_median_rent + p_mobility_one_year + 
-  p_vm + p_five_more_storeys + p_18_24
+  p_thirty_renter + 
+  n_median_rent + 
+  p_mobility_one_year + 
+  p_vm + 
+  p_five_more_storeys + 
+  #p_18_24  +
+  n_average_age +
+  p_built_after_2005
+
 lin_formula <- brmsformula(formula = brms_linear_eq) 
 mlinear_priors <- get_prior(lin_formula, data=data_model_f)
 mlinear_priors$prior[c(2:7)] <- "normal(0, 2)"
@@ -167,8 +179,15 @@ lin_mcmc_coefs
 ### 1.3.1 Prep model params ----------------------------------------------------
 
 brms_bin_eq <- n_financialized | trials(total)  ~
-  p_thirty_renter + n_median_rent + p_mobility_one_year + 
-  p_vm + p_five_more_storeys + p_18_24
+  p_thirty_renter + 
+  n_median_rent + 
+  p_mobility_one_year + 
+  p_vm + 
+  p_five_more_storeys + 
+  #p_18_24 +
+  n_average_age +
+  p_built_after_2005
+
 brms_bin_formula <- brmsformula(formula = brms_bin_eq, 
                                 family = binomial(link = "logit")) 
   
@@ -289,7 +308,9 @@ coefnames <- c("Intercept",
                "% one year mobility", 
                "% visible minorities",
                "% dwelling in five+ stories", 
-               "% pop 18-24")
+               #"% pop 18-24",
+               "% average age", 
+               "% units built after 2005")
 
 mcmcReg(list(brms_linear, brms_binomial, brms_bym),  
         pars = covariate_pars,pointest = "mean",
@@ -307,7 +328,9 @@ param_draws_linear <- brms_linear %>%
          `% visible minorities` = b_p_vm,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
-         `% pop 18-24` = b_p_18_24)
+         #`% pop 18-24` = b_p_18_24,
+         `average age` = b_n_average_age, 
+         `% units built after 2005` = p_built_after_2005)
 
 param_draws_log <- brms_binomial %>%
   as_draws_df() %>%
@@ -318,7 +341,9 @@ param_draws_log <- brms_binomial %>%
          `% visible minorities` = b_p_vm,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
-         `% pop 18-24` = b_p_18_24)
+         #`% pop 18-24` = b_p_18_24,
+         `average age` = b_n_average_age, 
+         `% units built after 2005` = p_built_after_2005)
 
 param_draws_bym <- brms_bym %>%
   as_draws_df() %>%
@@ -329,7 +354,9 @@ param_draws_bym <- brms_bym %>%
          `% visible minorities` = b_p_vm,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
-         `% pop 18-24` = b_p_18_24)
+         #`% pop 18-24` = b_p_18_24,
+         `average age` = b_n_average_age, 
+         `% units built after 2005` = p_built_after_2005)
 
 combined <- rbind(mcmc_intervals_data(param_draws_linear, prob = 0.95, prob_outer = 1),
                   mcmc_intervals_data(param_draws_log, prob = 0.95, prob_outer = 1),
@@ -376,7 +403,9 @@ linear_draws_df <- brms_linear %>%
          `% visible minorities` = b_p_vm,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
-         `% pop 18-24` = b_p_18_24) %>%
+         #`% pop 18-24` = b_p_18_24,
+         `average age` = b_n_average_age, 
+         `% units built after 2005` = p_built_after_2005) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'linear')
 
@@ -390,7 +419,9 @@ bin_draws_df <- brms_binomial%>%
          `% visible minorities` = b_p_vm,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
-         `% pop 18-24` = b_p_18_24) %>%
+         #`% pop 18-24` = b_p_18_24,
+         `average age` = b_n_average_age, 
+         `% units built after 2005` = p_built_after_2005) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'binomial')
 
@@ -404,7 +435,9 @@ bym_draws_df <- brms_bym %>%
          `% visible minorities` = b_p_vm,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% 1 year mob.` = b_p_mobility_one_year,
-         `% pop 18-24` = b_p_18_24) %>%
+         #`% pop 18-24` = b_p_18_24,
+         `average age` = b_n_average_age, 
+         `% units built after 2005` = p_built_after_2005) %>%
   gather(key='estimate', value='coefficient') %>%
   mutate(model = 'binomial-bym2')
 
