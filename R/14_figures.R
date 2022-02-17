@@ -88,8 +88,8 @@ fig_1 <- fig_1_map + fig_1_hist + guide_area() +
 
 fig_1
 
-ggsave("output/figures/figure_1.pdf", plot = fig_1, width = 8, height = 5, 
-       units = "in", useDingbats = FALSE)
+ggsave("output/figures/figure_1.png", plot = fig_1, width = 8, height = 5, 
+       units = "in")
 
 
 # Figure 2. Bivariate regressions -----------------------------------------
