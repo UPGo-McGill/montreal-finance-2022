@@ -531,7 +531,7 @@ ppc_dens_p <- ppc_dens_overlay_grouped(y = y_ppc_dens,
                                        alpha = 0.1,
                                        size=0.2) + 
   scale_colour_manual(
-    labels = c("actual", "fitted"),
+    labels = c("actual", "predicted"),
     values = c("#A80858", "#D87B91"),
     name = "Distributions") +
   theme_bw()
