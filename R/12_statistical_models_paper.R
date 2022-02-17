@@ -34,7 +34,7 @@ get_sse <- function(fitted, actual) {
 }
 
 plot_fit <- function(fitted, actual) {
-  data <- data.frame("predicted" = fitted, "actual" = actual)
+  data <- data.frame("predicted" = "predicted", "actual" = actual)
   ggplot(data, aes(x = predicted, y = actual)) +
     geom_point(color = "blue", alpha = 0.2) +
     theme_bw()
@@ -501,9 +501,9 @@ model_ppc_df_p <- model_ppc_df%>%
   geom_vline(xintercept = 0, alpha = 0.8) +
   scale_colour_manual(labels = c("0 to 1", "Less than 0"), 
                       values = c("#074387", "#FF6600"),
-                      name = "Fitted") + 
+                      name = "Predicted") + 
   theme_bw() +
-  xlab("Fitted") +
+  xlab("Predicted") +
   ylab("Actual")
 
 model_ppc_df_p
