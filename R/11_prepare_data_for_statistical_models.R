@@ -131,7 +131,7 @@ adjacency_plot
 adjplot_fn <- "output/figures/BYM_adjacency_map"
 ggsave(
   adjplot_fn,
-  device = "jpeg",
+  device = "png",
   plot = adjacency_plot)
 
 # Save data for models ---------------------------------------------------------

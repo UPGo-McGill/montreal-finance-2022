@@ -633,17 +633,32 @@ rcar_fig
 
 ## 2.7 Save plots --------------------------------------------------------------
 
-ggsave("output/figures/point_est_p.pdf", plot = point_est_p, width = 8, height = 5, 
-       units = "in", useDingbats = FALSE)
+ggsave("output/figures/point_est_p.png", 
+       plot = point_est_p, 
+       width = 8, 
+       height = 5, 
+       units = "in")
 
-ggsave("output/figures/p_density_ridges.pdf", plot = p_density_ridges, width = 8, height = 5, 
-       units = "in", useDingbats = FALSE)
+ggsave("output/figures/p_density_ridges.png", 
+       plot = p_density_ridges, 
+       width = 8, 
+       height = 5, 
+       units = "in")
 
-ggsave("output/figures/model_ppc.pdf", plot = model_ppc_df_p, width = 8, height = 5, 
-       units = "in", useDingbats = FALSE)
+ggsave("output/figures/model_ppc.png", 
+       plot = model_ppc_df_p, 
+       width = 8, 
+       height = 5, 
+       units = "in")
 
-ggsave("output/figures/ppc_dens.pdf", plot = ppc_dens_p, width = 8, height = 5, 
-       units = "in", useDingbats = FALSE)
+ggsave("output/figures/ppc_dens.png", 
+       plot = ppc_dens_p, 
+       width = 8, 
+       height = 5, 
+       units = "in")
 
-ggsave("output/figures/rcar_fig.pdf", plot = rcar_fig, width = 8, height = 5, 
-       units = "in", useDingbats = FALSE)
+ggsave("output/figures/rcar_fig.png", 
+       plot = rcar_fig, 
+       width = 8, 
+       height = 5, 
+       units = "in")
