@@ -10,15 +10,18 @@ library(ggpubr)
 
 # Figure 1. Percentage of financialized ownership -------------------------
 
+fig_alpha <- 0.8
+
 fig_1_full <- 
   data_CT |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
+  geom_sf(fill = 'white', color = 'grey', alpha=1) +
   geom_sf(aes(fill = p_financialized), color = "transparent") +
   geom_rect(xmin = 607000, ymin = 5038000, xmax = 614000, ymax = 5045000,
             fill = NA, colour = "black", size = 0.3) +
   scale_fill_stepsn(name= "Financialized rental units", 
-                    colors = col_palette[c(4, 1, 2, 9)],
+                    colors = alpha(col_palette[c(4, 1, 2, 9)], fig_alpha),
                     breaks = c(0.15, 0.30, 0.45, 0.60),
                     #values = c(0.2, 0.4, 0.6),
                     na.value = "grey80",
@@ -32,7 +35,7 @@ fig_1_full <-
 fig_1_inset <- 
   fig_1_full +
   scale_fill_stepsn(name= "Financialized rental units", 
-                    colors = col_palette[c(4, 1, 2, 9)],
+                    colors = alpha(col_palette[c(4, 1, 2, 9)], fig_alpha),
                     breaks = c(0.15, 0.30, 0.45, 0.60),
                     #values = c(0.2, 0.4, 0.6),
                     na.value = "grey80",
@@ -58,13 +61,16 @@ fig_1_hist <-
     p_financialized > 0.15 ~ "1",
     TRUE ~ "0"
   )) |> 
-  ggplot(aes(p_financialized, fill = fill)) +
-  geom_histogram(bins = 30) +
+  ggplot(aes(p_financialized, fill = fill, color=fill)) +
+  geom_histogram(bins = 30, alpha=fig_alpha) +
   scale_x_continuous(name = NULL, #"Financialized rental units",
                      labels = scales::percent) +
   scale_y_continuous(name = NULL) +
   scale_fill_manual(values = c("#F3B45F", "#EE7A35", "#DA6D61", "#BC6591", 
                                "#A53B6A"), guide = NULL) +
+  scale_color_manual(values = c("#F3B45F", "#EE7A35", "#DA6D61", "#BC6591", 
+                               "#A53B6A"), guide = NULL) +
+  geom_hline(yintercept = 0, color = "grey86") +
   theme_minimal()
 
 fig_1_layout <- "
@@ -79,6 +85,8 @@ fig_1 <- fig_1_map + fig_1_hist + guide_area() +
   theme(legend.position = "bottom") + 
   plot_layout(design = fig_1_layout, guides = "collect") + 
   plot_annotation(tag_levels = "A") 
+
+fig_1
 
 ggsave("output/figures/figure_1.pdf", plot = fig_1, width = 8, height = 5, 
        units = "in", useDingbats = FALSE)
