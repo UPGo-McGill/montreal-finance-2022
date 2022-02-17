@@ -618,8 +618,8 @@ rcar_hist <-
                     guide = NULL) +
   scale_color_manual(values = col_vals, 
                      guide = NULL) +
-  geom_vline(xintercept = 0, color = "black") +
-  geom_hline(yintercept = 0, color = "black") +
+  geom_vline(xintercept = 0, color = "grey86") +
+  geom_hline(yintercept = 0, color = "grey86") +
   theme_minimal()
 rcar_hist
 
