@@ -278,8 +278,9 @@ fig_4_poly <-
   data_CT |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
+  geom_sf(fill = 'white', color = 'grey', alpha=1) +
   geom_sf(aes(fill = cluster), colour = "transparent") +
-  scale_fill_manual(name = NULL, values = col_palette[c(1, 3, 4, 2, 5)]) +
+  scale_fill_manual(name = NULL, values = alpha(col_palette[c(1, 3, 4, 2, 5)]), fig_alpha) +
   guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
   upgo::gg_bbox(data_CT) +
   theme_void() +
@@ -298,9 +299,11 @@ fig_4_points <-
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
   geom_sf(data = uef, fill = "grey85", colour = "transparent") +
   geom_sf(aes(fill = cluster, colour = cluster), lwd = 0.05) +
-  scale_fill_manual(name = NULL, values = col_palette[c(1, 3, 4, 2, 5)],
+  scale_fill_manual(name = NULL, 
+                    values = alpha(col_palette[c(1, 3, 4, 2, 5)], fig_alpha),
                     guide = NULL) +
-  scale_colour_manual(name = NULL, values = col_palette[c(1, 3, 4, 2, 5)],
+  scale_colour_manual(name = NULL, 
+                      values = alpha(col_palette[c(1, 3, 4, 2, 5)], fig_alpha),
                       guide = NULL) +
   # guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
   upgo::gg_bbox(data_CT) +
