@@ -1,7 +1,5 @@
 #### 11 STATISTICAL MODELS FOR PAPER ###########################################
 
-# TODO
-
 # 0. Preamble ------------------------------------------------------------------
 
 # 0.1 Libraries and options ----------------------------------------------------
@@ -14,21 +12,20 @@ library(brms)
 library(ggridges)
 library(scales)
 library(stats)
-library(tidyr)
 library(tidybayes)
-library(tidyverse)
 
-options(scipen=999)
-bayesplot::theme_default()
+options(scipen = 999)
+
 
 # 0.2 Load data ----------------------------------------------------------------
 
 qs::qload("output/stat_model_data.qsm")
 
+
 # 0.3 Helper functions --------------------------------------------------------- 
 
 get_sse <- function(fitted, actual) {
-  sse <-  sum((fitted - actual)^2)
+  sse <-  sum((fitted - actual) ^ 2)
   return(sse)
 }
 
@@ -40,9 +37,10 @@ plot_fit <- function(fitted, actual) {
 }
 
 pred_to_proportion <- function(draw_m, totals, n) {
-  as_prop <- t(t(draw_m[1:n,])/totals)
+  as_prop <- t(t(draw_m[1:n,]) / totals)
   return(as_prop)
 }
+
 
 # 0.4 Color palettes ----------------------------------------------------------- 
 
