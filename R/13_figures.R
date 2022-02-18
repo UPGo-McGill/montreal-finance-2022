@@ -6,27 +6,31 @@ qload("output/geometry.qsm", nthreads = availableCores())
 qload("output/cluster.qsm", nthreads = availableCores())
 library(patchwork)
 library(ggpubr)
+fig_alpha <- 0.8
 
 
 # Figure 1. Percentage of financialized ownership -------------------------
-
-fig_alpha <- 0.8
 
 fig_1_full <- 
   data_CT |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(fill = 'white', color = 'grey', alpha=1) +
-  geom_sf(aes(fill = p_financialized), color = "transparent") +
+  geom_sf(aes(fill = p_financialized, colour = p_financialized), lwd = 0.2) +
   geom_rect(xmin = 607000, ymin = 5038000, xmax = 614000, ymax = 5045000,
             fill = NA, colour = "black", size = 0.3) +
   scale_fill_stepsn(name= "Financialized rental units", 
                     colors = alpha(col_palette[c(4, 1, 2, 9)], fig_alpha),
                     breaks = c(0.15, 0.30, 0.45, 0.60),
-                    #values = c(0.2, 0.4, 0.6),
                     na.value = "grey80",
                     limits = c(0, 0.75), oob = scales::squish, 
                     labels = scales::percent) +
+  scale_colour_stepsn(name= "Financialized rental units", 
+                      colors = col_palette[c(4, 1, 2, 9)],
+                      breaks = c(0.15, 0.30, 0.45, 0.60),
+                      na.value = "grey80",
+                      limits = c(0, 0.75), oob = scales::squish, 
+                      labels = scales::percent,
+                      guide = NULL) +
   gg_bbox(boroughs) +
   theme_void() +
   theme(legend.position = "bottom",
@@ -34,14 +38,7 @@ fig_1_full <-
 
 fig_1_inset <- 
   fig_1_full +
-  scale_fill_stepsn(name= "Financialized rental units", 
-                    colors = alpha(col_palette[c(4, 1, 2, 9)], fig_alpha),
-                    breaks = c(0.15, 0.30, 0.45, 0.60),
-                    #values = c(0.2, 0.4, 0.6),
-                    na.value = "grey80",
-                    limits = c(0, 0.75), oob = scales::squish, 
-                    labels = scales::percent, guide = NULL) +
-  geom_sf(data = streets_downtown, size = 0.3, colour = "white") +
+  geom_sf(data = streets_downtown, size = 0.4, colour = "grey93") +
   coord_sf(xlim = c(607000, 614000), ylim = c(5038000, 5045000),
            expand = FALSE) +
   theme(legend.position = "none",
@@ -49,18 +46,16 @@ fig_1_inset <-
 
 fig_1_map <- 
   fig_1_full + 
-  inset_element(fig_1_inset, left = 0, bottom = 0.45, right = 0.55, top = 0.92,
+  inset_element(fig_1_inset, left = 0, bottom = 0.47, right = 0.53, top = 0.92,
                 ignore_tag = TRUE)
 
 fig_1_hist <-
   data_CT |> 
-  mutate(fill = case_when(
-    p_financialized > 0.6 ~ "4",
-    p_financialized > 0.45 ~ "3",
-    p_financialized > 0.3 ~ "2",
-    p_financialized > 0.15 ~ "1",
-    TRUE ~ "0"
-  )) |> 
+  mutate(fill = case_when(p_financialized > 0.6 ~ "4",
+                          p_financialized > 0.45 ~ "3",
+                          p_financialized > 0.3 ~ "2",
+                          p_financialized > 0.15 ~ "1",
+                          TRUE ~ "0")) |> 
   ggplot(aes(p_financialized, fill = fill, color=fill)) +
   geom_histogram(bins = 30, alpha=fig_alpha) +
   scale_x_continuous(name = NULL, #"Financialized rental units",
@@ -85,8 +80,6 @@ fig_1 <- fig_1_map + fig_1_hist + guide_area() +
   theme(legend.position = "bottom") + 
   plot_layout(design = fig_1_layout, guides = "collect") + 
   plot_annotation(tag_levels = "A") 
-
-fig_1
 
 ggsave("output/figures/figure_1.png", plot = fig_1, width = 8, height = 5, 
        units = "in")
