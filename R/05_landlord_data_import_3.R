@@ -28,6 +28,7 @@ LL_analyzed <-
   full_join(landlord_names, by = "landlord_name") |> 
   mutate(financialized = publicly_traded + direct_involvement_FM + 
            financial_partners) |> 
+  mutate(financialized = coalesce(financialized, 0)) |> 
   select(-number_rental_units)
 
 LL_analyzed <- 

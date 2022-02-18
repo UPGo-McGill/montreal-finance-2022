@@ -1,8 +1,43 @@
-#### 08 BASIC DESCRIPTIVE ANALYSIS #############################################
+#### 09 BASIC DESCRIPTIVE ANALYSIS #############################################
 
 source("R/01_startup.R")
-qload("output/LL.qsm", nthreads = availableCores())
+landlord <- qread("output/landlord.qs", nthreads = availableCores())
+qload("output/data.qsm", nthreads = availableCores())
 qload("output/geometry.qsm", nthreads = availableCores())
+
+
+# Number of financialized buildings and units -----------------------------
+
+data_building |> 
+  st_drop_geometry() |> 
+  mutate(financialized = coalesce(financialized, 0)) |> 
+  summarize(
+    buildings = n(),
+    f_buildings = sum(financialized > 0),
+    units = sum(number_rental_units, na.rm = TRUE),
+    f_units = sum((financialized > 0) * number_rental_units, na.rm = TRUE)) |> 
+  mutate(building_pct = f_buildings / buildings,
+         unit_pct = f_units / units)
+
+
+
+# Spatial distribution ----------------------------------------------------
+
+data_CT |> 
+  select(total, n_financialized) |> 
+  st_centroid() |> 
+  st_intersection(boroughs) |> 
+  st_drop_geometry() |> 
+  group_by(borough) |> 
+  summarize(
+    total = sum(total, na.rm = TRUE),
+    fin = sum(n_financialized, na.rm = TRUE),
+    fin_pct = fin / total) |> 
+  arrange(fin_pct)
+
+data_CT |> 
+  pull(p_financialized) |> 
+  summary()
 
 
 # Number of properties built by year of construction ----------------------
@@ -146,7 +181,8 @@ top_landlords <-
   summarize(rental_units = sum(number_rental_units)) %>% 
   arrange(desc(rental_units)) %>% 
   slice(1:50) %>%
-  inner_join(., LL_analyzed %>% select(landlord_name, company_type, location_HO), by="landlord_name") %>% 
+  inner_join(LL_analyzed %>% select(landlord_name, company_type, location_HO), 
+             by = "landlord_name") %>% 
   distinct(landlord_name, .keep_all=TRUE)
 
 write_csv(top_landlords, "data/top_landlords.csv")
@@ -235,7 +271,8 @@ new_c_fz <-
   filter(financialized == "Financialized") %>% 
   ggplot()+
   geom_line(aes(annee_construction, number_rental_units), color=col_palette[9], size=1) +
-  scale_y_continuous(name = "Number of rental units built by financialized landlords", label = scales::comma) +
+  scale_y_continuous(name = "Number of rental units built by financialized landlords", 
+                     label = scales::comma) +
   scale_x_continuous(name = NULL)+
   scale_colour_manual(name = NULL, values = col_palette[c(9, 3)]) +
   theme_minimal() +
