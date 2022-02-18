@@ -1,5 +1,4 @@
-
-#### 12 Statistical models for paper ###########################################
+#### 11 STATISTICAL MODELS FOR PAPER ###########################################
 
 # TODO
 
@@ -7,7 +6,7 @@
 
 # 0.1 Libraries and options ----------------------------------------------------
 
-source("01_startup.R")
+source("R/01_startup.R")
 
 library(bayesplot)
 library(BayesPostEst)
