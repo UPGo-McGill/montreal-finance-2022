@@ -1,4 +1,4 @@
-#### 10 CLUSTER ANALYSIS #######################################################
+#### 09 CLUSTER ANALYSIS #######################################################
 
 source("R/01_startup.R")
 qload("output/data.qsm", nthreads = availableCores())
