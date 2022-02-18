@@ -351,7 +351,7 @@ close(fileConn)
 
 qsave(brms_linear, "output/models/brms_linear.qs")
 qsave(brms_binomial, "output/models/brms_binomial.qs")
-qsave(brms_bym, "output/models/brms_bym.qs")
+qsave(brms_bym, "output/models/brms_bym.qs", nthreads = availableCores())
 qsavem(combined, n_y_rep, pp_linear, pp_bin, pp_bym,
        file = "output/models/extra.qsm")
 
