@@ -1,4 +1,4 @@
-#### 09 BASIC DESCRIPTIVE ANALYSIS #############################################
+#### 12 FACTS FOR PAPER ########################################################
 
 source("R/01_startup.R")
 landlord <- qread("output/landlord.qs", nthreads = availableCores())
@@ -17,7 +17,9 @@ data_building |>
     units = sum(number_rental_units, na.rm = TRUE),
     f_units = sum((financialized > 0) * number_rental_units, na.rm = TRUE)) |> 
   mutate(building_pct = f_buildings / buildings,
-         unit_pct = f_units / units)
+         unit_pct = f_units / units) |> 
+  mutate(across(c(buildings, f_buildings, units, f_units), scales::comma),
+         across(c(building_pct, unit_pct), scales::percent, 0.1))
 
 
 
@@ -25,19 +27,23 @@ data_building |>
 
 data_CT |> 
   select(total, n_financialized) |> 
+  st_set_agr("constant") |> 
   st_centroid() |> 
-  st_intersection(boroughs) |> 
+  st_intersection(st_set_agr(boroughs, "constant")) |> 
   st_drop_geometry() |> 
   group_by(borough) |> 
   summarize(
     total = sum(total, na.rm = TRUE),
     fin = sum(n_financialized, na.rm = TRUE),
     fin_pct = fin / total) |> 
-  arrange(fin_pct)
+  arrange(fin_pct) |> 
+  mutate(fin_pct = scales::percent(fin_pct, 0.1))
 
 data_CT |> 
   pull(p_financialized) |> 
-  summary()
+  summary() |> 
+  as.numeric() |> 
+  scales::percent(0.1)
 
 
 # Number of properties built by year of construction ----------------------
