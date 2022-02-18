@@ -236,9 +236,9 @@ bin_mcmc_coefs <-
 data_model$gr <- as.factor(seq.int(nrow(data_model)))
 brms_bym_formula <- brmsformula(formula = brms_bin_eq, 
                            family = binomial(link = "logit"),
-                           autocor = ~ car(w, gr=gr,type = "bym")) 
+                           autocor = ~ car(w, gr = gr,type = "bym")) 
 
-stan_data2 = list(w=BYM_adj_mat)
+stan_data2 <- list(w = BYM_adj_mat)
 brms_bym_priors <- get_prior(brms_bym_formula, 
                              data=data_model,
                              data2=stan_data2)
@@ -248,12 +248,13 @@ control <- list(max_treedepth = 12,
                 adapt_delta = 0.97, 
                 stepsize = 0.5)
 
+
 ### 1.4.2 Run model ------------------------------------------------------------
 
 brms_bym <- brm(brms_bym_formula, 
-                prior=brms_bym_priors,
+                prior = brms_bym_priors,
                 data = data_model, 
-                data2=stan_data2,
+                data2 = stan_data2,
                 warmup = warmup, 
                 iter = iterations,
                 chains = chains, 
@@ -263,7 +264,9 @@ brms_bym <- brm(brms_bym_formula,
                 thin = 1,
                 save_pars = save_m_pars,
                 control = control)
-saveRDS(brms_bym, "output/models/brms_bym.rds")
+
+qsave(brms_bym, "output/models/brms_bym.qs")
+
 
 ### 1.4.3 Eval model -----------------------------------------------------------
 
