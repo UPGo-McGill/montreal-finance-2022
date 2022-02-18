@@ -77,7 +77,7 @@ plot_fit(glm_binomial$fitted.values, data_model$p_financialized)
 
 ## 1.2 BRMS Linear Regression --------------------------------------------------
 
-### 1.2.0 General setup --------------------------------------------------------
+### 1.2.1 General setup --------------------------------------------------------
 
 ndraws <- 4000
 warmup <- 4000
@@ -99,7 +99,7 @@ covariate_pars <- c("b_Intercept",
                     "b_p_built_after_2005")
 
 
-### 1.2.1 Prep model params ----------------------------------------------------
+### 1.2.2 Prep model params ----------------------------------------------------
 
 brms_linear_eq <- p_financialized ~ 
   n_median_rent + 
@@ -116,7 +116,7 @@ mlinear_priors <- get_prior(lin_formula, data = data_model)
 mlinear_priors$prior[c(2:7)] <- "normal(0, 2)"
 
 
-### 1.2.2. Run model -----------------------------------------------------------
+### 1.2.3 Run model ------------------------------------------------------------
 
 brms_linear <- brm(formula = lin_formula, 
                    data = data_model,
@@ -129,10 +129,8 @@ brms_linear <- brm(formula = lin_formula,
                    inits = inits,
                    save_pars = save_m_pars)
 
-qsave(brms_linear, "output/models/brms_linear.qs")
 
-
-### 1.2.3 Eval model -----------------------------------------------------------
+### 1.2.4 Eval model -----------------------------------------------------------
 
 plot(brms_linear, combo = c("dens", "trace"))
 pairs(brms_linear)
@@ -140,13 +138,12 @@ pairs(brms_linear)
 pp_linear <- posterior_predict(brms_linear, ndraws = ndraws)
 get_sse(colMeans(pp_linear), data_model$p_financialized)
 
-ppc_dens_overlay_linear_p <- ppc_dens_overlay(data_model$p_financialized, 
-                                              pp_linear[1:100,],
-                                              size = 0.5,
-                                              trim = TRUE)
+# PPC density overlay
+ppc_dens_overlay(data_model$p_financialized, pp_linear[1:100,], size = 0.5,
+                 trim = TRUE)
 
-lin_mcmc_coefs <- 
-  mcmc_areas(as.matrix(brms_linear), pars = covariate_pars, prob = 0.95) + 
+# Posterior distributions
+mcmc_areas(as.matrix(brms_linear), pars = covariate_pars, prob = 0.95) + 
   ggtitle("Posterior distributions for linear regression",
           "with medians and 80% intervals") +
   vline_0(colour = "orange") +
@@ -176,18 +173,16 @@ brms_bin_priors$prior[c(2:7)] <- "normal(0, 2)"
 
 ### 1.3.2 Run model ------------------------------------------------------------
 
-brms_binomial<- brm(brms_bin_formula,
-                    data = data_model, 
-                    prior=brms_bin_priors,
-                    warmup = warmup, 
-                    iter = iterations, 
-                    chains = chains, 
-                    inits = inits, 
-                    cores = cores,
-                    seed = seed,
-                    save_pars = save_m_pars)
-
-qsave(brms_binomial, "output/models/brms_binomial.qs")
+brms_binomial <- brm(brms_bin_formula,
+                     data = data_model, 
+                     prior = brms_bin_priors,
+                     warmup = warmup, 
+                     iter = iterations, 
+                     chains = chains, 
+                     inits = inits, 
+                     cores = cores,
+                     seed = seed,
+                     save_pars = save_m_pars)
 
 
 ### 1.3.3 Eval model -----------------------------------------------------------
@@ -446,7 +441,7 @@ ggsave("output/figures/ppc_dens.png",
 
 
 
-## 2.8 Save Stan models --------------------------------------------------------
+## 3.0 Save models and outputs -------------------------------------------------
 
 fileConn <- file("output/models/brms_linear.stan")
 writeLines(brms_linear$model, fileConn)
@@ -460,10 +455,14 @@ fileConn <- file("output/models/brms_bym.stan")
 writeLines(brms_bym$model, fileConn)
 close(fileConn)
 
+qsave(brms_linear, "output/models/brms_linear.qs")
+qsave(brms_binomial, "output/models/brms_binomial.qs")
 
-## 3.0 Clean up ----------------------------------------------------------------
+
+
+## 3.1 Clean up ----------------------------------------------------------------
 
 rm(get_sse, plot_fit, pred_to_proportion, glm_eq, ndraws, warmup, iterations, 
    seed, chains, cores, inits, save_m_pars, covariate_pars, brms_linear_eq,
-   lin_formula, mlinear_priors)
+   lin_formula, mlinear_priors, brms_bin_eq, brms_bin_formula, brms_bin_priors)
 
