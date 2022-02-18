@@ -37,33 +37,53 @@ data_model_f %>%
 
 # Exploratory Spatial Diagnostics ----------------------------------------------
 
-OLS_eq <- p_financialized ~ p_thirty_renter + 
+OLS_eq <- p_financialized ~ n_median_rent + 
+  p_thirty_renter + 
+  average_age +
+  p_vm + 
+  p_mobility_one_year + 
+  p_five_more_storeys + 
+  p_built_after_2005
+  
+binomial_eq <- cbind(n_financialized, total) ~ p_thirty_renter + 
   n_median_rent + 
   p_mobility_one_year + 
   p_vm + 
   p_five_more_storeys + 
-  p_18_24
+  n_average_age +
+  p_built_after_2005
 
 OLS_fit <- lm(OLS_eq, data = data_model_f)
+binomial_fit <- glm(glm_eq,
+                    data = data_model_f, 
+                    family = binomial)
 
 moran_tests <- data_model_f %>%
   dplyr::select(-c(geometry, median_rent, p_18_24, GeoUID)) %>%
   as.tibble()%>%
-  mutate(OLS_res = OLS_fit$residuals) %>%
+  mutate(binomial_res = binomial_fit$residuals) %>%
   dplyr::select(-geometry, -log_financialized) %>%
   map_dfr(~ Moran.I(., nb2mat(queen_adj))) %>%
   mutate(variable = c(colnames(dplyr::select(as.tibble(data_model_f), 
-                                           -c(geometry, median_rent, p_18_24, log_financialized, GeoUID))), "OLS_res")) %>%
+                                           -c(geometry, median_rent, p_18_24, log_financialized, GeoUID))), "binomial_res")) %>%
   dplyr::select(variable, observed, expected, sd, p.value)
 
 mt_to_file <- moran_tests %>% 
   filter(str_detect(variable, "p_") | 
          str_detect(variable, "^n_median") | 
-         str_detect(variable, "^OLS")) %>%
-  mutate(variable = c("% financialized", "% renter's housing stress",
-                      "% one year mobility", "% visible minorities",
-                      "% dwellings in five+ storeys", "% pop 18-24",
-                      "OLS residuals"))
+         str_detect(variable, "^binomial") |
+         str_detect(variable, "^n_average")) %>%
+  mutate(variable = c("% financialized", 
+                      "Median rent",
+                      "% renters' housing stress",
+                      "% average age", 
+                      "% visible minorities",
+                      "% one year mobility", 
+                      "% dwelling in five+ stories", 
+                      "% units built after 2005",
+                      "Binomial residuals")) %>%
+  select(variable, observed, p.value)
+         
 
 caption <- "Global Moran's I coefficients for the dependent and independent model variables."
 print(xtable(mt_to_file,
