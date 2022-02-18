@@ -13,11 +13,13 @@ req_parsed <- qread("output/req_parsed.qs", nthreads = availableCores())
 
 req_parsed <- 
   req_parsed |> 
-  mutate(person = if_else(str_detect(new_name, "[:upper:]\\,\\s"), TRUE, 
+  mutate(person = if_else(str_detect(name_to_scrape, "[:upper:]\\,\\s"), TRUE, 
                           person),
-         new_name = if_else(name == new_name, "Loop, same shareholder as owner", 
-                            new_name)) |> 
-  select(-full_text)
+         name_to_scrape = if_else(company_name == name_to_scrape, 
+                                  "Loop, same shareholder as owner", 
+                                  name_to_scrape)) |> 
+  select(name = company_name, firm_type, activity, person, 
+         new_name = name_to_scrape)
 
 non_financialized <- 
   req_parsed |> 
