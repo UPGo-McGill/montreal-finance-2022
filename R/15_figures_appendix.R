@@ -79,6 +79,12 @@ ppc_dens_p$layers <-
   c(geom_vline(xintercept = 0, color = "black", lty = 2, alpha = 0.5), 
     ppc_dens_p$layers)
 
+ggsave("output/figures/ppc_dens.png", 
+       plot = ppc_dens_p, 
+       width = 8, 
+       height = 5, 
+       units = "in")
+
 
 
 # PPC ---------------------------------------------------------------------
@@ -219,5 +225,104 @@ ggsave("output/figures/rcar_fig.png",
        width = 8, 
        height = 5, 
        units = "in")
+
+
+## 2.3 Posterior parameter draw ridges -----------------------------------------
+
+# Not used
+
+
+n_head <- 1000
+
+linear_draws_df <- 
+  brms_linear |> 
+  as_tibble() |> 
+  head(n_head) |> 
+  select(all_of(covariate_pars)) |> 
+  rename(Intercept = b_Intercept,
+         `median rent` = b_n_median_rent,
+         `% renters' in stress` = b_p_thirty_renter,
+         `average age` = b_n_average_age, 
+         `% visible minorities` = b_p_vm,
+         `% 1 year mob.` = b_p_mobility_one_year,
+         #`% pop 18-24` = b_p_18_24,
+         `% dwelling in 5+ st.` = b_p_five_more_storeys,
+         `% units built after 2005` = b_p_built_after_2005) |> 
+  gather(key = 'estimate', value = 'coefficient') |> 
+  mutate(model = 'linear')
+
+bin_draws_df <- 
+  brms_binomial |> 
+  as_tibble() |> 
+  head(n_head) |> 
+  select(all_of(covariate_pars)) |> 
+  rename(Intercept = b_Intercept,
+         `median rent` = b_n_median_rent,
+         `% renters' in stress` = b_p_thirty_renter,
+         `average age` = b_n_average_age, 
+         `% visible minorities` = b_p_vm,
+         `% 1 year mob.` = b_p_mobility_one_year,
+         #`% pop 18-24` = b_p_18_24,
+         `% dwelling in 5+ st.` = b_p_five_more_storeys,
+         `% units built after 2005` = b_p_built_after_2005) |> 
+  gather(key = 'estimate', value = 'coefficient') |> 
+  mutate(model = 'binomial')
+
+bym_draws_df <- 
+  brms_bym |> 
+  as_tibble() |> 
+  head(n_head) |> 
+  select(all_of(covariate_pars)) |> 
+  rename(Intercept = b_Intercept,
+         `median rent` = b_n_median_rent,
+         `% renters' in stress` = b_p_thirty_renter,
+         `average age` = b_n_average_age, 
+         `% visible minorities` = b_p_vm,
+         `% 1 year mob.` = b_p_mobility_one_year,
+         #`% pop 18-24` = b_p_18_24,
+         `% dwelling in 5+ st.` = b_p_five_more_storeys,
+         `% units built after 2005` = b_p_built_after_2005) |> 
+  gather(key = 'estimate', value = 'coefficient') |> 
+  mutate(model = 'binomial-bym2')
+
+model_draws_df <- 
+  linear_draws_df |> 
+  bind_rows(bin_draws_df, bym_draws_df) |> 
+  mutate(model = factor(model, 
+                        levels = c('linear','binomial', 'binomial-bym2'))) |> 
+  filter(estimate != "Intercept")
+
+p_density_ridges <- 
+  ggplot(model_draws_df, 
+         aes(x = coefficient, y = estimate, fill = factor(stat(quantile)))) + 
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = c(0.025, 0.975),
+    scale = 1) + 
+  scale_fill_manual(
+    name = "Probability", 
+    values = alpha(c("#FF6600", "#3399CC", "#FF6600"), 0.5),
+    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")) + 
+  facet_grid(cols = vars(model), scales = "free_x") +
+  geom_vline(xintercept = 0.0, color = "black", alpha = 0.8, lty = 3) + 
+  theme_bw() +
+  ylab("Estimate") +
+  xlab("Coefficient")
+
+
+
+
+
+## 2.7 Save plots --------------------------------------------------------------
+
+
+ggsave("output/figures/p_density_ridges.png", 
+       plot = p_density_ridges, 
+       width = 8, 
+       height = 5, 
+       units = "in")
+
+
 
 

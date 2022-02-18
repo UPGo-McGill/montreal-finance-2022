@@ -193,14 +193,14 @@ pairs(brms_binomial)
 pp_bin <- posterior_predict(brms_binomial, ndraws = ndraws)
 get_sse((colMeans(pp_bin) / data_model$total), data_model$p_financialized)
 
-ppc_dens_bin_p <- ppc_dens_overlay(
-  data_model$p_financialized, 
-  pred_to_proportion(pp_bin, data_model$total, 100),
-  size = 0.5,
-  trim = TRUE)
+# PPC density overlay
+ppc_dens_overlay(data_model$p_financialized, 
+                 pred_to_proportion(pp_bin, data_model$total, 100),
+                 size = 0.5,
+                 trim = TRUE)
 
-bin_mcmc_coefs <- 
-  mcmc_areas(as.matrix(brms_binomial), pars = covariate_pars, prob = 0.95) + 
+# Posterior distributions
+mcmc_areas(as.matrix(brms_binomial), pars = covariate_pars, prob = 0.95) + 
   ggtitle("Posterior distributions for binomial regression",
           "with medians and 95% intervals") +
   vline_0(colour = "orange") +
@@ -213,18 +213,15 @@ bin_mcmc_coefs <-
 
 data_model$gr <- as.factor(seq.int(nrow(data_model)))
 brms_bym_formula <- brmsformula(formula = brms_bin_eq, 
-                           family = binomial(link = "logit"),
-                           autocor = ~ car(w, gr = gr,type = "bym")) 
+                                family = binomial(link = "logit"),
+                                autocor = ~ car(w, gr = gr,type = "bym")) 
 
 stan_data2 <- list(w = BYM_adj_mat)
-brms_bym_priors <- get_prior(brms_bym_formula, 
-                             data=data_model,
-                             data2=stan_data2)
+brms_bym_priors <- get_prior(brms_bym_formula, data = data_model, 
+                             data2 = stan_data2)
 brms_bym_priors$prior[c(2:7)] <- "normal(0, 1)"
 brms_bym_priors$prior[10] <- "normal(0, 1)" 
-control <- list(max_treedepth = 12,
-                adapt_delta = 0.97, 
-                stepsize = 0.5)
+control <- list(max_treedepth = 12, adapt_delta = 0.97, stepsize = 0.5)
 
 
 ### 1.4.2 Run model ------------------------------------------------------------
@@ -243,8 +240,6 @@ brms_bym <- brm(brms_bym_formula,
                 save_pars = save_m_pars,
                 control = control)
 
-qsave(brms_bym, "output/models/brms_bym.qs")
-
 
 ### 1.4.3 Eval model -----------------------------------------------------------
 
@@ -254,14 +249,13 @@ pairs(brms_bym, pars = covariate_pars)
 pp_bym <- posterior_predict(brms_bym, ndraws = ndraws)
 get_sse((colMeans(pp_bym) / data_model$total), data_model$p_financialized)
 
-ppc_dens_bym_p <- ppc_dens_overlay(
-  data_model$p_financialized, 
-  pred_to_proportion(pp_bym, data_model$total, 100),
-  size = 0.5,
-  trim = TRUE)
+# PPC density overlay
+ppc_dens_overlay(data_model$p_financialized, 
+                 pred_to_proportion(pp_bym, data_model$total, 100),
+                 size = 0.5, trim = TRUE)
 
-bym_mcmc_coefs <- 
-  mcmc_areas(as.matrix(brms_bym), pars = covariate_pars, prob = 0.95) + 
+# Posterior distributions
+mcmc_areas(as.matrix(brms_bym), pars = covariate_pars, prob = 0.95) + 
   ggtitle("Posterior distributions for binomial regression",
           "with medians and 95% intervals") +
   vline_0(colour = "orange") +
@@ -339,107 +333,7 @@ combined <- bind_rows(
   filter(parameter != 'Intercept')
 
 
-
-## 2.3 Posterior parameter draw ridges -----------------------------------------
-
-n_head <- 1000
-
-linear_draws_df <- 
-  brms_linear |> 
-  as_tibble() |> 
-  head(n_head) |> 
-  select(all_of(covariate_pars)) |> 
-  rename(Intercept = b_Intercept,
-         `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_thirty_renter,
-         `average age` = b_n_average_age, 
-         `% visible minorities` = b_p_vm,
-         `% 1 year mob.` = b_p_mobility_one_year,
-         #`% pop 18-24` = b_p_18_24,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
-         `% units built after 2005` = b_p_built_after_2005) |> 
-  gather(key = 'estimate', value = 'coefficient') |> 
-  mutate(model = 'linear')
-
-bin_draws_df <- 
-  brms_binomial |> 
-  as_tibble() |> 
-  head(n_head) |> 
-  select(all_of(covariate_pars)) |> 
-  rename(Intercept = b_Intercept,
-         `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_thirty_renter,
-         `average age` = b_n_average_age, 
-         `% visible minorities` = b_p_vm,
-         `% 1 year mob.` = b_p_mobility_one_year,
-         #`% pop 18-24` = b_p_18_24,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
-         `% units built after 2005` = b_p_built_after_2005) |> 
-  gather(key = 'estimate', value = 'coefficient') |> 
-  mutate(model = 'binomial')
-
-bym_draws_df <- 
-  brms_bym |> 
-  as_tibble() |> 
-  head(n_head) |> 
-  select(all_of(covariate_pars)) |> 
-  rename(Intercept = b_Intercept,
-         `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_thirty_renter,
-         `average age` = b_n_average_age, 
-         `% visible minorities` = b_p_vm,
-         `% 1 year mob.` = b_p_mobility_one_year,
-         #`% pop 18-24` = b_p_18_24,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
-         `% units built after 2005` = b_p_built_after_2005) |> 
-  gather(key = 'estimate', value = 'coefficient') |> 
-  mutate(model = 'binomial-bym2')
-
-model_draws_df <- 
-  linear_draws_df |> 
-  bind_rows(bin_draws_df, bym_draws_df) |> 
-  mutate(model = factor(model, 
-                        levels = c('linear','binomial', 'binomial-bym2'))) |> 
-  filter(estimate != "Intercept")
-
-p_density_ridges <- 
-  ggplot(model_draws_df, 
-         aes(x = coefficient, y = estimate, fill = factor(stat(quantile)))) + 
-  stat_density_ridges(
-    geom = "density_ridges_gradient",
-    calc_ecdf = TRUE,
-    quantiles = c(0.025, 0.975),
-    scale = 1) + 
-  scale_fill_manual(
-    name = "Probability", 
-    values = alpha(c("#FF6600", "#3399CC", "#FF6600"), 0.5),
-    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")) + 
-  facet_grid(cols = vars(model), scales = "free_x") +
-  geom_vline(xintercept = 0.0, color = "black", alpha = 0.8, lty = 3) + 
-  theme_bw() +
-  ylab("Estimate") +
-  xlab("Coefficient")
-
-
-
-
-
-## 2.7 Save plots --------------------------------------------------------------
-
-
-ggsave("output/figures/p_density_ridges.png", 
-       plot = p_density_ridges, 
-       width = 8, 
-       height = 5, 
-       units = "in")
-
-ggsave("output/figures/ppc_dens.png", 
-       plot = ppc_dens_p, 
-       width = 8, 
-       height = 5, 
-       units = "in")
-
-
+# 3.0 Finalize -----------------------------------------------------------------
 
 ## 3.0 Save models and outputs -------------------------------------------------
 
@@ -457,12 +351,15 @@ close(fileConn)
 
 qsave(brms_linear, "output/models/brms_linear.qs")
 qsave(brms_binomial, "output/models/brms_binomial.qs")
-
+qsave(brms_bym, "output/models/brms_bym.qs")
+qsavem(combined, n_y_rep, pp_linear, pp_bin, pp_bym,
+       file = "output/models/extra.qsm")
 
 
 ## 3.1 Clean up ----------------------------------------------------------------
 
 rm(get_sse, plot_fit, pred_to_proportion, glm_eq, ndraws, warmup, iterations, 
    seed, chains, cores, inits, save_m_pars, covariate_pars, brms_linear_eq,
-   lin_formula, mlinear_priors, brms_bin_eq, brms_bin_formula, brms_bin_priors)
-
+   lin_formula, mlinear_priors, brms_bin_eq, brms_bin_formula, brms_bin_priors,
+   brms_bym_formula, brms_bym_priors, control, coefnames, param_draws_linear,
+   param_draws_log, param_draws_bym)
