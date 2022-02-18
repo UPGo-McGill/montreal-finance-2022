@@ -160,8 +160,8 @@ ppc_dens_overlay_linear_p <- ppc_dens_overlay(data_model$p_financialized,
                                               size = 0.5,
                                               trim = TRUE)
 
-
-mcmc_areas(as.matrix(brms_linear), pars = covariate_pars, prob = 0.95) + 
+lin_mcmc_coefs <- 
+  mcmc_areas(as.matrix(brms_linear), pars = covariate_pars, prob = 0.95) + 
   ggtitle("Posterior distributions for linear regression",
           "with medians and 80% intervals") +
   vline_0(colour = "orange") +
@@ -188,6 +188,7 @@ brms_bin_formula <- brmsformula(formula = brms_bin_eq,
 brms_bin_priors <- get_prior(brms_bin_formula, data=data_model)
 brms_bin_priors$prior[c(2:7)] <- "normal(0, 2)"
 
+
 ### 1.3.2 Run model ------------------------------------------------------------
 
 brms_binomial<- brm(brms_bin_formula,
@@ -200,34 +201,33 @@ brms_binomial<- brm(brms_bin_formula,
                     cores = cores,
                     seed = seed,
                     save_pars = save_m_pars)
-saveRDS(brms_binomial, "output/models/brms_binomial.rds")
+
+qsave(brms_binomial, "output/models/brms_binomial.qs")
+
 
 ### 1.3.3 Eval model -----------------------------------------------------------
 
 plot(brms_binomial, combo = c("dens", "trace"))
 pairs(brms_binomial)
 
-pp_bin <- posterior_predict(brms_binomial, ndraws=ndraws)
-get_sse((colMeans(pp_bin) / data_model$total),
-        data_model$p_financialized)
+pp_bin <- posterior_predict(brms_binomial, ndraws = ndraws)
+get_sse((colMeans(pp_bin) / data_model$total), data_model$p_financialized)
 
-ppc_dens_bin_p <- ppc_dens_overlay(data_model$p_financialized, 
-                                   pred_to_proportion(pp_bin,
-                                                      data_model$total,
-                                                      100),
-                                   size = 0.5,
-                                   trim=T)
-ppc_dens_bin_p
+ppc_dens_bin_p <- ppc_dens_overlay(
+  data_model$p_financialized, 
+  pred_to_proportion(pp_bin, data_model$total, 100),
+  size = 0.5,
+  trim = TRUE)
 
-plot_title <- ggtitle("Posterior distributions for binomial regression",
-                      "with medians and 95% intervals")
-bin_mcmc_coefs <- mcmc_areas(as.matrix(brms_binomial),
+bin_mcmc_coefs <- 
+  mcmc_areas(as.matrix(brms_binomial),
                              pars = covariate_pars,
                              prob = 0.95) + 
-  plot_title +
+  ggtitle("Posterior distributions for binomial regression",
+          "with medians and 95% intervals") +
   vline_0(colour = "orange") +
   theme_bw()
-bin_mcmc_coefs
+
 
 ## 1.4. Bayesian binomial regression with BYM2 priors --------------------------
 
