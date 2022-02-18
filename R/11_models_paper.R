@@ -220,9 +220,7 @@ ppc_dens_bin_p <- ppc_dens_overlay(
   trim = TRUE)
 
 bin_mcmc_coefs <- 
-  mcmc_areas(as.matrix(brms_binomial),
-                             pars = covariate_pars,
-                             prob = 0.95) + 
+  mcmc_areas(as.matrix(brms_binomial), pars = covariate_pars, prob = 0.95) + 
   ggtitle("Posterior distributions for binomial regression",
           "with medians and 95% intervals") +
   vline_0(colour = "orange") +
@@ -274,26 +272,21 @@ plot(brms_bym, combo = c("dens", "trace"))
 pairs(brms_bym, pars = covariate_pars)
 
 pp_bym <- posterior_predict(brms_bym, ndraws = ndraws)
-get_sse((colMeans(pp_bym) / data_model$total),
-        data_model$p_financialized)
+get_sse((colMeans(pp_bym) / data_model$total), data_model$p_financialized)
 
-ppc_dens_bym_p <- ppc_dens_overlay(data_model$p_financialized, 
-                                   pred_to_proportion(pp_bym, 
-                                                      data_model$total,
-                                                      100),
-                                   size = 0.5,
-                                   trim=T)
-ppc_dens_bym_p
+ppc_dens_bym_p <- ppc_dens_overlay(
+  data_model$p_financialized, 
+  pred_to_proportion(pp_bym, data_model$total, 100),
+  size = 0.5,
+  trim = TRUE)
 
-plot_title <- ggtitle("Posterior distributions for binomial regression",
-                      "with medians and 95% intervals")
-bym_mcmc_coefs <- mcmc_areas(as.matrix(brms_bym),
-                             pars = covariate_pars,
-                             prob = 0.95) + 
-  plot_title +
+bym_mcmc_coefs <- 
+  mcmc_areas(as.matrix(brms_bym), pars = covariate_pars, prob = 0.95) + 
+  ggtitle("Posterior distributions for binomial regression",
+          "with medians and 95% intervals") +
   vline_0(colour = "orange") +
   theme_bw()
-bym_mcmc_coefs
+
 
 # 2. Compare Models ------------------------------------------------------------
 
