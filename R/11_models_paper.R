@@ -302,15 +302,16 @@ coefnames <- c("Intercept",
                "% units built after 2005")
 
 mcmcReg(list(brms_linear, brms_binomial, brms_bym),  
-        pars = covariate_pars,pointest = "mean",
-        coefnames = list(coefnames,coefnames,coefnames),
-        )
+        pars = covariate_pars, pointest = "mean",
+        coefnames = list(coefnames, coefnames, coefnames))
+
 
 ## 2.2 Posterior parameter draws -----------------------------------------------
 
-param_draws_linear <- brms_linear %>% 
-  as_draws_df() %>%
-  dplyr::select(covariate_pars) %>%
+param_draws_linear <- 
+  brms_linear |> 
+  as_draws_df() |> 
+  select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
          `median rent` = b_n_median_rent,
          `% renters' in stress` = b_p_thirty_renter,
@@ -321,9 +322,10 @@ param_draws_linear <- brms_linear %>%
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% units built after 2005` = b_p_built_after_2005)
 
-param_draws_log <- brms_binomial %>%
-  as_draws_df() %>%
-  dplyr::select(covariate_pars) %>%
+param_draws_log <- 
+  brms_binomial |> 
+  as_draws_df() |> 
+  select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
          `median rent` = b_n_median_rent,
          `% renters' in stress` = b_p_thirty_renter,
@@ -334,9 +336,10 @@ param_draws_log <- brms_binomial %>%
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% units built after 2005` = b_p_built_after_2005)
 
-param_draws_bym <- brms_bym %>%
-  as_draws_df() %>%
-  dplyr::select(covariate_pars) %>%
+param_draws_bym <- 
+  brms_bym |> 
+  as_draws_df() |> 
+  select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
          `median rent` = b_n_median_rent,
          `% renters' in stress` = b_p_thirty_renter,
@@ -347,46 +350,44 @@ param_draws_bym <- brms_bym %>%
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% units built after 2005` = b_p_built_after_2005)
 
-combined <- rbind(mcmc_intervals_data(param_draws_linear, prob = 0.95, prob_outer = 1),
-                  mcmc_intervals_data(param_draws_log, prob = 0.95, prob_outer = 1),
-                  mcmc_intervals_data(param_draws_bym, prob = 0.95, prob_outer = 1))
-combined$model <- rep(c("linear", "binomial", "bym"), 
-                      each = ncol(param_draws_linear))
-combined <- filter(combined, parameter != 'Intercept')
+combined <- bind_rows(
+  mcmc_intervals_data(param_draws_linear, prob = 0.95, prob_outer = 1),
+  mcmc_intervals_data(param_draws_log, prob = 0.95, prob_outer = 1),
+  mcmc_intervals_data(param_draws_bym, prob = 0.95, prob_outer = 1)) |> 
+  mutate(model = rep(c("linear", "binomial", "bym"), 
+                     each = ncol(param_draws_linear))) |> 
+  filter(parameter != 'Intercept')
 
-pos <- position_nudge(y = ifelse(
-  combined$model == "bym", 0, ifelse(combined$model == "binomial", 0.1, 0.2)))
+pos <- position_nudge(y = if_else(
+  combined$model == "bym", 0, if_else(combined$model == "binomial", 0.1, 0.2)))
 
-point_est_p <- combined %>%
+point_est_p <-
+  combined |> 
   ggplot(aes(x = m, y = parameter, color = model)) + 
-  geom_vline(xintercept = 0.0, 
-             color="red",
-             alpha = 1,
-             size = 0.3,
-             lty=2) + 
-  geom_linerange(aes(xmin = l, xmax = h), position = pos, size=2) +
+  geom_vline(xintercept = 0.0, color = "red", alpha = 1, size = 0.3, lty = 2) + 
+  geom_linerange(aes(xmin = l, xmax = h), position = pos, size = 2) +
   geom_linerange(aes(xmin = ll, xmax = hh), position = pos) +
   geom_linerange(aes(xmin = ll, xmax = hh), position = pos)+
   geom_point(position = pos, size = 1, alpha = 10) +
   scale_colour_manual(breaks = c("linear", "binomial", "bym"),
                       labels = c("linear", "binomial", "binomial-bym2"), 
                       values = c( "#3399CC","#CC6699", "#FF6600"),
-                      name="Model") + 
+                      name = "Model") + 
   xlab("Estimate") + 
   ylab("Parameter") + 
-  scale_y_discrete(limits=rev) + 
+  scale_y_discrete(limits = rev) + 
   theme_minimal()
 
-point_est_p
 
 ## 2.3 Posterior parameter draw ridges -----------------------------------------
 
-n_head = 1000
+n_head <- 1000
 
-linear_draws_df <- brms_linear %>%
-  as_tibble() %>%
-  head(n_head) %>%
-  dplyr::select(covariate_pars) %>%
+linear_draws_df <- 
+  brms_linear |> 
+  as_tibble() |> 
+  head(n_head) |> 
+  select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
          `median rent` = b_n_median_rent,
          `% renters' in stress` = b_p_thirty_renter,
@@ -395,14 +396,15 @@ linear_draws_df <- brms_linear %>%
          `% 1 year mob.` = b_p_mobility_one_year,
          #`% pop 18-24` = b_p_18_24,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
-         `% units built after 2005` = b_p_built_after_2005) %>%
-  gather(key='estimate', value='coefficient') %>%
+         `% units built after 2005` = b_p_built_after_2005) |> 
+  gather(key = 'estimate', value = 'coefficient') |> 
   mutate(model = 'linear')
 
-bin_draws_df <- brms_binomial%>%
-  as_tibble() %>%
-  head(n_head) %>%
-  dplyr::select(covariate_pars) %>%
+bin_draws_df <- 
+  brms_binomial |> 
+  as_tibble() |> 
+  head(n_head) |> 
+  select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
          `median rent` = b_n_median_rent,
          `% renters' in stress` = b_p_thirty_renter,
@@ -411,14 +413,15 @@ bin_draws_df <- brms_binomial%>%
          `% 1 year mob.` = b_p_mobility_one_year,
          #`% pop 18-24` = b_p_18_24,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
-         `% units built after 2005` = b_p_built_after_2005) %>%
-  gather(key='estimate', value='coefficient') %>%
+         `% units built after 2005` = b_p_built_after_2005) |> 
+  gather(key = 'estimate', value = 'coefficient') |> 
   mutate(model = 'binomial')
 
-bym_draws_df <- brms_bym %>%
-  as_tibble() %>%
-  head(n_head) %>%
-  dplyr::select(covariate_pars) %>%
+bym_draws_df <- 
+  brms_bym |> 
+  as_tibble() |> 
+  head(n_head) |> 
+  select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
          `median rent` = b_n_median_rent,
          `% renters' in stress` = b_p_thirty_renter,
@@ -427,43 +430,39 @@ bym_draws_df <- brms_bym %>%
          `% 1 year mob.` = b_p_mobility_one_year,
          #`% pop 18-24` = b_p_18_24,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
-         `% units built after 2005` = b_p_built_after_2005) %>%
-  gather(key='estimate', value='coefficient') %>%
+         `% units built after 2005` = b_p_built_after_2005) |> 
+  gather(key = 'estimate', value = 'coefficient') |> 
   mutate(model = 'binomial-bym2')
 
-model_draws_df <- linear_draws_df %>%
-  bind_rows(bin_draws_df, bym_draws_df) %>%
+model_draws_df <- 
+  linear_draws_df |> 
+  bind_rows(bin_draws_df, bym_draws_df) |> 
   mutate(model = factor(model, 
-                        levels = c('linear','binomial', 'binomial-bym2'))) %>%
+                        levels = c('linear','binomial', 'binomial-bym2'))) |> 
   filter(estimate != "Intercept")
 
 p_density_ridges <- 
-  ggplot(model_draws_df, aes(x = coefficient, 
-                           y = estimate,
-                           fill = factor(stat(quantile)))) + 
+  ggplot(model_draws_df, 
+         aes(x = coefficient, y = estimate, fill = factor(stat(quantile)))) + 
   stat_density_ridges(
     geom = "density_ridges_gradient",
     calc_ecdf = TRUE,
     quantiles = c(0.025, 0.975),
-    scale=1) + 
+    scale = 1) + 
   scale_fill_manual(
     name = "Probability", 
     values = alpha(c("#FF6600", "#3399CC", "#FF6600"), 0.5),
-    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
-  ) + 
+    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")) + 
   facet_grid(cols = vars(model), scales = "free_x") +
-  geom_vline(xintercept = 0.0, 
-             color="black",
-             alpha = 0.8,
-             lty = 3) + 
+  geom_vline(xintercept = 0.0, color = "black", alpha = 0.8, lty = 3) + 
   theme_bw() +
   ylab("Estimate") +
   xlab("Coefficient")
-p_density_ridges      
+
 
 ## 2.4 Posterior predictions ---------------------------------------------------
 
-n_draws_points = n_y_rep
+n_draws_points <- n_y_rep
 
 ppc_linear <- tibble(
   y_hat = as.vector(t(pp_linear[1:n_draws_points,])),
