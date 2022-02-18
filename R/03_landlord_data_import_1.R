@@ -8,7 +8,8 @@ source("R/01_startup.R")
 # Import 2020 landlord data -----------------------------------------------
 
 LL_2020 <- 
-  read_csv("data/merged_Nov2020.csv") |> 
+  read_csv("data/merged_Nov2020.csv", show_col_types = FALSE, 
+           progress = FALSE) |> 
   select(numero_matricule = Numero_de_matricule,
          adresse = Adresse, 
          adresse_postale = Adresse_postale, 
