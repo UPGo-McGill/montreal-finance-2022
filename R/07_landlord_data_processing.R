@@ -139,11 +139,12 @@ CT <-
 
 # Save output -------------------------------------------------------------
 
-qsavem(LL_2020, LL_analyzed, LL_sf, file = "output/LL.qsm",
-       nthreads = availableCores())
+landlord <- LL_sf
+
+qsave(landlord, file = "output/landlord.qs", nthreads = availableCores())
 qsavem(boroughs, CT, CT_06, province, streets_downtown, uef,
        file = "output/geometry.qsm", nthreads = availableCores())
 
-rm(asking_rents, individuals_landlords, ltr, non_fz_PM_landlords,
-   req_names, req_parsed, total_landlords, uef, individuals,
-   no_corporate_info_avail, non_financialized, obnl, rest)
+rm(asking_rents, individuals_landlords, LL_2020, LL_analyzed, LL_sf, ltr, 
+   non_fz_PM_landlords, req_names, req_parsed, total_landlords, uef, 
+   individuals, no_corporate_info_avail, non_financialized, obnl, rest)
