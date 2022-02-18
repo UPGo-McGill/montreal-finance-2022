@@ -54,6 +54,7 @@ col_3_inferno <- c("#FF0000A0", "#0000FFA0", "#FF0000A0")
 col_3_viridis <- c("#440154ff", "#21908CFF", "#5DC863FF")
 col_2_turbo <- c('#39A4FBFF', '#DB3A07FF')
 
+
 # 1. Models --------------------------------------------------------------------
 
 ## 1.1 Frequentist Binomial Regression -----------------------------------------
@@ -69,33 +70,34 @@ glm_eq <- cbind(n_financialized, total) ~ p_thirty_renter +
   n_average_age +
   p_built_after_2005
 
+
 ### 1.1.2 Run model ------------------------------------------------------------
 
-glm_binomial <- glm(glm_eq,
-                    data = data_model_f, 
-                    family = binomial)
+glm_binomial <- glm(glm_eq, data = data_model, family = binomial)
+
+
 ### 1.1.3 Eval model -----------------------------------------------------------
 
 summary(glm_binomial)
 
-sse_glm_bin <- get_sse(glm_binomial$fitted.values, data_model_f$p_financialized)
+sse_glm_bin <- get_sse(glm_binomial$fitted.values, data_model$p_financialized)
 sse_glm_bin
 
-glm_fit_p <- plot_fit(glm_binomial$fitted.values, 
-                      data_model_f$p_financialized)
+glm_fit_p <- plot_fit(glm_binomial$fitted.values, data_model$p_financialized)
+
 
 ## 1.2 BRMS Linear Regression --------------------------------------------------
 
 ### 1.2.0 General setup --------------------------------------------------------
 
-ndraws = 2000
-warmup = 2000
-iterations = 8000
-seed = 123
-chains = 4
-cores = 4
-inits = "random"
-save_m_pars = save_pars(all = TRUE)
+ndraws <- 4000
+warmup <- 4000
+iterations <- 10000
+seed <- 123
+chains <- 8
+cores <- 8
+inits <- "random"
+save_m_pars <- save_pars(all = TRUE)
 
 covariate_pars <- c("b_Intercept",
                     "b_n_median_rent", 
@@ -108,8 +110,9 @@ covariate_pars <- c("b_Intercept",
                     "b_p_built_after_2005")
 
 n_y_rep <- 100
-counts_ppc <- rep(data_model_f$total, n_y_rep)
-y_ppc  <- rep(data_model_f$p_financialized, n_y_rep)
+counts_ppc <- rep(data_model$total, n_y_rep)
+y_ppc  <- rep(data_model$p_financialized, n_y_rep)
+
 
 ### 1.2.1 Prep model params ----------------------------------------------------
 
@@ -124,13 +127,14 @@ brms_linear_eq <- p_financialized ~
   p_built_after_2005
 
 lin_formula <- brmsformula(formula = brms_linear_eq) 
-mlinear_priors <- get_prior(lin_formula, data=data_model_f)
+mlinear_priors <- get_prior(lin_formula, data = data_model)
 mlinear_priors$prior[c(2:7)] <- "normal(0, 2)"
+
 
 ### 1.2.2. Run model -----------------------------------------------------------
 
 brms_linear <- brm(formula = lin_formula, 
-                   data = data_model_f,
+                   data = data_model,
                    prior = mlinear_priors,
                    warmup = warmup,
                    iter = iterations,
@@ -139,32 +143,30 @@ brms_linear <- brm(formula = lin_formula,
                    cores = cores,
                    inits = inits,
                    save_pars = save_m_pars)
-saveRDS(brms_linear, "output/models/brms_linear.rds")
+
+qsave(brms_linear, "output/models/brms_linear.qs")
+
 
 ### 1.2.3 Eval model -----------------------------------------------------------
 
 plot(brms_linear, combo = c("dens", "trace"))
 pairs(brms_linear)
 
-pp_linear <- posterior_predict(brms_linear, ndraws=ndraws)
-get_sse(colMeans(pp_linear), data_model_f$p_financialized)
+pp_linear <- posterior_predict(brms_linear, ndraws = ndraws)
+get_sse(colMeans(pp_linear), data_model$p_financialized)
 
-ppc_dens_overlay_linear_p <- ppc_dens_overlay(data_model_f$p_financialized, 
+ppc_dens_overlay_linear_p <- ppc_dens_overlay(data_model$p_financialized, 
                                               pp_linear[1:100,],
                                               size = 0.5,
-                                              trim=T)
-ppc_dens_overlay_linear_p
+                                              trim = TRUE)
 
-plot_title <- ggtitle("Posterior distributions for linear regression",
-                      "with medians and 80% intervals")
-lin_mcmc_coefs <- mcmc_areas(as.matrix(brms_linear),
-                             pars = covariate_pars,
-                             prob = 0.95) + 
-  plot_title +
+
+mcmc_areas(as.matrix(brms_linear), pars = covariate_pars, prob = 0.95) + 
+  ggtitle("Posterior distributions for linear regression",
+          "with medians and 80% intervals") +
   vline_0(colour = "orange") +
   theme_bw()
 
-lin_mcmc_coefs
 
 ## 1.3. Bayesian binomial regression -------------------------------------------
 
@@ -183,13 +185,13 @@ brms_bin_eq <- n_financialized | trials(total)  ~
 brms_bin_formula <- brmsformula(formula = brms_bin_eq, 
                                 family = binomial(link = "logit")) 
   
-brms_bin_priors <- get_prior(brms_bin_formula, data=data_model_f)
+brms_bin_priors <- get_prior(brms_bin_formula, data=data_model)
 brms_bin_priors$prior[c(2:7)] <- "normal(0, 2)"
 
 ### 1.3.2 Run model ------------------------------------------------------------
 
 brms_binomial<- brm(brms_bin_formula,
-                    data = data_model_f, 
+                    data = data_model, 
                     prior=brms_bin_priors,
                     warmup = warmup, 
                     iter = iterations, 
@@ -206,12 +208,12 @@ plot(brms_binomial, combo = c("dens", "trace"))
 pairs(brms_binomial)
 
 pp_bin <- posterior_predict(brms_binomial, ndraws=ndraws)
-get_sse((colMeans(pp_bin) / data_model_f$total),
-        data_model_f$p_financialized)
+get_sse((colMeans(pp_bin) / data_model$total),
+        data_model$p_financialized)
 
-ppc_dens_bin_p <- ppc_dens_overlay(data_model_f$p_financialized, 
+ppc_dens_bin_p <- ppc_dens_overlay(data_model$p_financialized, 
                                    pred_to_proportion(pp_bin,
-                                                      data_model_f$total,
+                                                      data_model$total,
                                                       100),
                                    size = 0.5,
                                    trim=T)
@@ -231,14 +233,14 @@ bin_mcmc_coefs
 
 ### 1.4.1 Prep model params ----------------------------------------------------
 
-data_model_f$gr <- as.factor(seq.int(nrow(data_model_f)))
+data_model$gr <- as.factor(seq.int(nrow(data_model)))
 brms_bym_formula <- brmsformula(formula = brms_bin_eq, 
                            family = binomial(link = "logit"),
                            autocor = ~ car(w, gr=gr,type = "bym")) 
 
 stan_data2 = list(w=BYM_adj_mat)
 brms_bym_priors <- get_prior(brms_bym_formula, 
-                             data=data_model_f,
+                             data=data_model,
                              data2=stan_data2)
 brms_bym_priors$prior[c(2:7)] <- "normal(0, 1)"
 brms_bym_priors$prior[10] <- "normal(0, 1)" 
@@ -250,7 +252,7 @@ control <- list(max_treedepth = 12,
 
 brms_bym <- brm(brms_bym_formula, 
                 prior=brms_bym_priors,
-                data = data_model_f, 
+                data = data_model, 
                 data2=stan_data2,
                 warmup = warmup, 
                 iter = iterations,
@@ -269,12 +271,12 @@ plot(brms_bym, combo = c("dens", "trace"))
 pairs(brms_bym, pars = covariate_pars)
 
 pp_bym <- posterior_predict(brms_bym, ndraws = ndraws)
-get_sse((colMeans(pp_bym) / data_model_f$total),
-        data_model_f$p_financialized)
+get_sse((colMeans(pp_bym) / data_model$total),
+        data_model$p_financialized)
 
-ppc_dens_bym_p <- ppc_dens_overlay(data_model_f$p_financialized, 
+ppc_dens_bym_p <- ppc_dens_overlay(data_model$p_financialized, 
                                    pred_to_proportion(pp_bym, 
-                                                      data_model_f$total,
+                                                      data_model$total,
                                                       100),
                                    size = 0.5,
                                    trim=T)
@@ -508,13 +510,13 @@ model_ppc_df_p
 
 n_dens_draws = n_y_rep
 ncols = ncol(pp_bym)
-y_ppc_dens <- rep(data_model_f$p_financialized, 3)
+y_ppc_dens <- rep(data_model$p_financialized, 3)
 y_pred_ppc_dens <- cbind(pp_linear[1:n_dens_draws,], 
                          pred_to_proportion(pp_bin, 
-                                            data_model_f$total,
+                                            data_model$total,
                                             n_dens_draws), 
                          pred_to_proportion(pp_bym, 
-                                            data_model_f$total,
+                                            data_model$total,
                                             n_dens_draws))
 groups_ppc_dens <- factor(cbind(rep("linear", ncols), 
                          rep("binomial", ncols),
@@ -552,7 +554,7 @@ bym_rcar <- brms_bym %>%
   left_join(bym_rcar_variance) %>%
   rename(lattice_keys = `1:466`) %>%
   arrange(desc(lattice_keys)) %>%
-  left_join(rowid_to_column(data_model_f, "lattice_keys")) %>%
+  left_join(rowid_to_column(data_model, "lattice_keys")) %>%
   mutate(rcarabove_0 = ifelse(rcar < 0, 0, rcar))
 
 rcar_alpha <- 0.8
