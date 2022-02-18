@@ -304,7 +304,6 @@ coefnames <- c("Intercept",
                "% visible minorities",
                "% one year mobility", 
                "% dwelling in five+ stories", 
-               #"% pop 18-24",
                "% units built after 2005")
 
 mcmcReg(list(brms_linear, brms_binomial, brms_bym),  
@@ -662,3 +661,17 @@ ggsave("output/figures/rcar_fig.png",
        width = 8, 
        height = 5, 
        units = "in")
+
+## 2.8 Save Stan models --------------------------------------------------------
+
+fileConn<-file("output/models/brms_linear.stan")
+writeLines(brms_linear$model, fileConn)
+close(fileConn)
+
+fileConn<-file("output/models/brms_binomial.stan")
+writeLines(brms_binomial$model, fileConn)
+close(fileConn)
+
+fileConn<-file("output/models/brms_bym.stan")
+writeLines(brms_bym$model, fileConn)
+close(fileConn)
