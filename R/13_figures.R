@@ -1,4 +1,4 @@
-#### 12 FIGURES FOR PAPER ######################################################
+#### 13 FIGURES FOR PAPER ######################################################
 
 source("R/01_startup.R")
 qload("output/data.qsm", nthreads = availableCores())
