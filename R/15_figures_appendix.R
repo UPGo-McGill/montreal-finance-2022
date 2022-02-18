@@ -1,5 +1,5 @@
 adjacency_plot <- 
-  data_model_f |> 
+  data_model |> 
   st_as_sf() |>
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +

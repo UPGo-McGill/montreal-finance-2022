@@ -269,7 +269,39 @@ ggsave("output/figures/figure_2.pdf", plot = fig_2, width = 12,
 
 # Figure 3. Multiple regression -------------------------------------------
 
-# TKTK
+
+
+pos <- position_nudge(y = if_else(
+  combined$model == "bym", 0, if_else(combined$model == "binomial", 0.1, 0.2)))
+
+point_est_p <-
+  combined |> 
+  ggplot(aes(x = m, y = parameter, color = model)) + 
+  geom_vline(xintercept = 0.0, color = "red", alpha = 1, size = 0.3, lty = 2) + 
+  geom_linerange(aes(xmin = l, xmax = h), position = pos, size = 2) +
+  geom_linerange(aes(xmin = ll, xmax = hh), position = pos) +
+  geom_linerange(aes(xmin = ll, xmax = hh), position = pos)+
+  geom_point(position = pos, size = 1, alpha = 10) +
+  scale_colour_manual(breaks = c("linear", "binomial", "bym"),
+                      labels = c("linear", "binomial", "binomial-bym2"), 
+                      values = c( "#3399CC","#CC6699", "#FF6600"),
+                      name = "Model") + 
+  xlab("Estimate") + 
+  ylab("Parameter") + 
+  scale_y_discrete(limits = rev) + 
+  theme_minimal()
+
+
+
+
+ggsave("output/figures/point_est_p.png", 
+       plot = point_est_p, 
+       width = 8, 
+       height = 5, 
+       units = "in")
+
+
+
 
 
 # Figure 4. Cluster map ---------------------------------------------------
