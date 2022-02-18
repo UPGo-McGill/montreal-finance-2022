@@ -1,14 +1,14 @@
 #### 08 FINANCIALIZATION DATASETS ##############################################
 
 source("R/01_startup.R")
-qload("output/LL.qsm", nthreads = availableCores())
+landlord <- qread("output/landlord.qs", nthreads = availableCores())
 qload("output/geometry.qsm", nthreads = availableCores())
 
 
 # Join LL data to CTs -----------------------------------------------------
 
 LL_CT <- 
-  LL_sf |> 
+  landlord |> 
   filter(number_rental_units > 0) |> 
   st_intersection(CT) |> 
   mutate(across(c(publicly_traded, direct_involvement_FM, financial_partners),
@@ -51,7 +51,8 @@ data_CT <-
   data_building |> 
   st_drop_geometry() |>
   group_by(GeoUID) |>
-  summarise(n_after_2005 = sum(number_rental_units[annee_construction >= 2005], na.rm = TRUE),
+  summarise(n_after_2005 = sum(number_rental_units[annee_construction >= 2005], 
+                               na.rm = TRUE),
             n_rentals = sum(number_rental_units),
             p_built_after_2005 = n_after_2005 / n_rentals,
             .groups = "drop") |>
