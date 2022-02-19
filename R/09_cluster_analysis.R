@@ -52,15 +52,16 @@ data_CT <-
   data_CT |> 
   left_join(cluster_with_id) |> 
   mutate(cluster = case_when(
-           cluster == 1 ~ "Suburban non-financialized",
-           cluster == 4 ~ "Precarious and student financialized",
-           cluster == 2 ~ "Immigrant periphery non-financialized",
-           cluster == 5 ~ "Affluent financialized",
-           cluster == 3 ~ "Gentrifying non-financialized"), 
+           cluster == 1 ~ "3. Suburban non-financialized",
+           cluster == 4 ~ "1. Precarious and student financialized",
+           cluster == 2 ~ "4. Immigrant periphery non-financialized",
+           cluster == 5 ~ "2. Affluent financialized",
+           cluster == 3 ~ "5. Gentrifying non-financialized"), 
          cluster = factor(cluster, levels = c(
-           "Precarious and student financialized", "Affluent financialized",
-           "Suburban non-financialized", "Gentrifying non-financialized",
-           "Immigrant periphery non-financialized"))) |> 
+           "1. Precarious and student financialized", 
+           "2. Affluent financialized",
+           "3. Suburban non-financialized", "4. Gentrifying non-financialized",
+           "5. Immigrant periphery non-financialized"))) |> 
   relocate(cluster, .before = geometry)
 
 data_building <- 
@@ -98,13 +99,6 @@ CT_parent_vectors <-
   select(-dwellings) |> 
   as_tibble() |> 
   st_as_sf(agr = "constant")
-
-CT_parent_vectors <- 
-  data_CT |> 
-  st_drop_geometry() |>
-  select(GeoUID, n_rentals) |>
-  left_join(CT_parent_vectors, by = "GeoUID") |>
-  st_as_sf()
 
 sum_func <- function(data) {
   
