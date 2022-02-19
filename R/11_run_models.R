@@ -315,14 +315,14 @@ param_draws_bym <-
   as_draws_df() |> 
   select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
-         `median rent`        = b_n_median_rent,
-         `% renter stress`    = b_p_thirty_renter,
-         `average age`        = b_n_average_age, 
-         `% vis. minorities`  = b_p_vm,
-         `% 1 year mob.`      = b_p_mobility_one_year,
+         `median rent`         = b_n_median_rent,
+         `% renter stress`     = b_p_thirty_renter,
+         `average age`         = b_n_average_age, 
+         `% vis. minorities`   = b_p_vm,
+         `% 1 year mobility`   = b_p_mobility_one_year,
          #`% pop 18-24` = b_p_18_24,
-         `% dwellings 5+ st.` = b_p_five_more_storeys,
-         `% units built '05+` = b_p_built_after_2005)
+         `% dwellings 5+ st.`  = b_p_five_more_storeys,
+         `% units built 2005+` = b_p_built_after_2005)
 
 combined <- bind_rows(
   mcmc_intervals_data(param_draws_linear, prob = 0.95, prob_outer = 1),

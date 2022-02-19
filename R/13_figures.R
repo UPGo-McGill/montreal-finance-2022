@@ -20,7 +20,7 @@ fig_1_full <-
   geom_sf(aes(fill = p_financialized, colour = p_financialized), lwd = 0.3) +
   geom_rect(xmin = 607000, ymin = 5038000, xmax = 614000, ymax = 5045000,
             fill = NA, colour = "black", size = 0.3) +
-  scale_fill_stepsn(name= "Financialized rental units", 
+  scale_fill_stepsn(name = "Financialized rental units", 
                     colors = alpha(col_palette[c(4, 1, 2, 9)], fig_alpha),
                     breaks = c(0.15, 0.30, 0.45, 0.60),
                     na.value = "grey80",
@@ -288,7 +288,6 @@ fig_3 <-
   geom_vline(xintercept = 0.0, colour = "red", alpha = 1, size = 0.3, lty = 2) + 
   geom_linerange(aes(xmin = l, xmax = h), position = pos, size = 2) +
   geom_linerange(aes(xmin = ll, xmax = hh), position = pos) +
-  geom_linerange(aes(xmin = ll, xmax = hh), position = pos) +
   geom_point(position = pos, size = 1, alpha = 10) +
   scale_colour_manual(breaks = c("linear", "binomial", "bym"),
                       labels = c("linear", "binomial", "binomial-bym2"), 
@@ -296,8 +295,8 @@ fig_3 <-
   xlab("Estimate") + 
   scale_y_discrete(name = NULL, limits = rev) + 
   theme_minimal() +
-  theme(legend.position = "bottom", text = element_text(family = "Futura"),
-        plot.background = element_rect(fill = "white"))
+  theme(legend.position = "right", text = element_text(family = "Futura"),
+        plot.background = element_rect(fill = "white", colour = "transparent"))
 
 ggsave("output/figures/figure_3.png", plot = fig_3, width = 6.5, height = 4, 
        units = "in")
@@ -309,21 +308,17 @@ fig_4_poly <-
   data_CT |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(fill = 'white', color = 'grey', alpha = 1) +
-  geom_sf(aes(fill = cluster), colour = "transparent") +
-  scale_fill_manual(name = NULL, values = alpha(col_palette[c(1, 3, 4, 2, 5)]), 
-                    fig_alpha) +
+  geom_sf(aes(fill = cluster, colour = cluster), lwd = 0.3) +
+  scale_fill_manual(name = NULL, values = alpha(col_palette[c(4, 3, 1, 2, 5)], 
+                    fig_alpha)) +
+  scale_colour_manual(name = NULL, values = col_palette[c(4, 3, 1, 2, 5)]) +
   guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
   upgo::gg_bbox(data_CT) +
   theme_void() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", text = element_text(family = "Futura"))
 
 fig_4_points <- 
   data_building |> 
-  left_join(
-    data_CT_clusters |> 
-      st_drop_geometry() |> 
-      select(GeoUID, cluster), by = "GeoUID") |> 
   filter(!is.na(cluster)) |> 
   group_by(cluster) |> 
   summarize() |> 
@@ -332,39 +327,51 @@ fig_4_points <-
   geom_sf(data = uef, fill = "grey85", colour = "transparent") +
   geom_sf(aes(fill = cluster, colour = cluster), lwd = 0.05) +
   scale_fill_manual(name = NULL, 
-                    values = alpha(col_palette[c(1, 3, 4, 2, 5)], fig_alpha),
+                    values = alpha(col_palette[c(4, 3, 1, 2, 5)], fig_alpha),
                     guide = NULL) +
-  scale_colour_manual(name = NULL, 
-                      values = alpha(col_palette[c(1, 3, 4, 2, 5)], fig_alpha),
+  scale_colour_manual(name = NULL, values = col_palette[c(4, 3, 1, 2, 5)],
                       guide = NULL) +
   # guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
   upgo::gg_bbox(data_CT) +
   theme_void() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", text = element_text(family = "Futura"))
+
+fig_4_layout <- "
+AABB
+AABB
+AABB
+AABB
+AABB
+AABB
+AABB
+AABB
+CCCC
+"
 
 fig_4 <- fig_4_poly + fig_4_points + guide_area() + 
-  plot_layout(design = fig_1_layout, guides = "collect") +
-  theme(legend.position = "bottom") + 
-  plot_annotation(tag_levels = "A") 
+  plot_layout(design = fig_4_layout, guides = "collect") +
+  plot_annotation(tag_levels = "A") +
+  theme(legend.position = "bottom", text = element_text(family = "Futura"))
 
-ggsave("output/figure_4.pdf", plot = fig_4, width = 8, height = 5, units = "in", 
-       useDingbats = FALSE)
+ggsave("output/figures/figure_4.png", plot = fig_4, width = 8, height = 5, 
+       units = "in")
 
 
-
-# Figure 5. Cluster analysis table ----------------------------------------
+# Table 1. Cluster analysis table -----------------------------------------
 
 # First part
 cluster_averages |> 
   select(cluster, p_financialized, median_rent, asking_rent, p_thirty_renter,
-         med_hh_income, average_value_dwellings, p_renter, p_condo, p_built_after_2005) |> 
+         med_hh_income, average_value_dwellings, p_renter, p_condo, 
+         p_built_after_2005) |> 
   mutate(across(starts_with("p_"), scales::percent, 0.1),
          across(c(median_rent, asking_rent, med_hh_income, 
                   average_value_dwellings), scales::dollar, 1)) |> 
   set_names(c("Cluster", "Financialized rental units", "Median rent",
               "Average asking rent", "Renters in housing stress", 
               "After-tax median HH income", "Average dwelling value",
-              "Renter households", "Condo households", "Rental units built after 2005")) |> 
+              "Renter households", "Condo households", 
+              "Rental units built after 2005")) |> 
   gt::gt()
 
 # Second part
@@ -379,4 +386,3 @@ cluster_averages |>
               "Visible minorities", "Immigrants", "Distance from downtown (km)",
               "Population aged 18-24", "Population aged 65+")) |> 
   gt::gt()
-
