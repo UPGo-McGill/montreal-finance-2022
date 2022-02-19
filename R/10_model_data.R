@@ -27,31 +27,25 @@ stdize <- function(x, ...) (x - min(x, ...)) / (max(x, ...) - min(x, ...))
 
 data_model <- 
   data_CT |> 
-  select(p_financialized, p_thirty_renter, median_rent, p_mobility_one_year, 
+  select(p_fin, p_stress, median_rent, p_mobility_one_year, 
          p_vm, p_five_more_storeys, p_18_24, p_built_after_2005, average_age,
-         n_financialized, total, GeoUID) |> 
+         n_fin, total, GeoUID) |> 
   mutate(n_median_rent = stdize(median_rent, na.rm = TRUE),
          n_average_age = stdize(average_age, na.rm = TRUE),
-         log_financialized = if_else(p_financialized == 0, 
-                                     p_financialized, 
-                                     log(p_financialized * 100)),
-         log_18_24 = if_else(p_18_24 == 0, 
-                             p_18_24, 
-                             log(p_18_24 * 100)),
+         log_financialized = if_else(p_fin == 0, p_fin, log(p_fin * 100)),
+         log_18_24 = if_else(p_18_24 == 0, p_18_24, log(p_18_24 * 100)),
          log_five_more_storeys = if_else(p_five_more_storeys == 0, 
                                          p_five_more_storeys, 
                                          log(p_five_more_storeys * 100)),
-         logit_financialized =  if_else(p_financialized == 0, 
-                                        p_financialized, 
-                                        (1 / 1 - log(p_financialized * 100))),
+         logit_financialized =  if_else(p_fin == 0, p_fin, 
+                                        (1 / 1 - log(p_fin * 100))),
          log_n_median_rent = if_else(n_median_rent == 0, 
-                                     n_median_rent, 
-                                     log(n_median_rent * 100)),
+                                     n_median_rent, log(n_median_rent * 100)),
          ss_18_24 = scale_center(p_18_24),
          ss_median_rent = scale_center(median_rent),
          ss_vm = scale_center(p_vm),
          ss_five_more_storeys = scale_center(p_five_more_storeys),
-         ss_thirty_renter = scale_center(p_thirty_renter),
+         ss_thirty_renter = scale_center(p_stress),
          ss_mobility_one_year = scale_center(p_mobility_one_year))
 
 

@@ -100,7 +100,7 @@ uef <-
   rename(numero_matricule = MATRICULE8) |> 
   mutate(centroid = st_centroid(geometry))
 
-LL_sf <- 
+landlord <- 
   LL_analyzed |> 
   inner_join(select(uef, numero_matricule, centroid, geometry), 
              by = "numero_matricule") |> 
@@ -139,12 +139,10 @@ CT <-
 
 # Save output -------------------------------------------------------------
 
-landlord <- LL_sf
-
 qsave(landlord, file = "output/landlord.qs", nthreads = availableCores())
-qsavem(boroughs, CT, CT_06, province, streets_downtown, uef,
-       file = "output/geometry.qsm", nthreads = availableCores())
+qsavem(boroughs, CT, CT_06, province, #streets_downtown, 
+       uef, file = "output/geometry.qsm", nthreads = availableCores())
 
-rm(asking_rents, individuals_landlords, LL_2020, LL_analyzed, LL_sf, ltr, 
-   non_fz_PM_landlords, req_names, req_parsed, total_landlords, uef, 
-   individuals, no_corporate_info_avail, non_financialized, obnl, rest)
+rm(asking_rents, individuals_landlords, LL_2020, LL_analyzed, ltr, 
+   non_fz_PM_landlords, req_parsed, total_landlords, uef, individuals, 
+   no_corporate_info_avail, non_financialized, obnl, rest)

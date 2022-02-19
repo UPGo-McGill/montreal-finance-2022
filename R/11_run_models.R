@@ -48,7 +48,7 @@ pred_to_proportion <- function(draw_m, totals, n) {
 
 ### 1.1.1 Prep model params ----------------------------------------------------
 
-glm_eq <- cbind(n_financialized, total) ~ p_thirty_renter + 
+glm_eq <- cbind(n_fin, total) ~ p_stress + 
   n_median_rent + 
   p_mobility_one_year + 
   p_vm + 
@@ -69,10 +69,10 @@ glm_binomial <- glm(glm_eq, data = data_model, family = binomial)
 summary(glm_binomial)
 
 # SSE
-get_sse(glm_binomial$fitted.values, data_model$p_financialized)
+get_sse(glm_binomial$fitted.values, data_model$p_fin)
 
 # Fit plot
-plot_fit(glm_binomial$fitted.values, data_model$p_financialized)
+plot_fit(glm_binomial$fitted.values, data_model$p_fin)
 
 
 ## 1.2 BRMS Linear Regression --------------------------------------------------
@@ -90,7 +90,7 @@ save_m_pars <- save_pars(all = TRUE)
 
 covariate_pars <- c("b_Intercept",
                     "b_n_median_rent", 
-                    "b_p_thirty_renter",
+                    "b_p_stress",
                     "b_n_average_age",
                     "b_p_vm",
                     "b_p_mobility_one_year",
@@ -101,9 +101,9 @@ covariate_pars <- c("b_Intercept",
 
 ### 1.2.2 Prep model params ----------------------------------------------------
 
-brms_linear_eq <- p_financialized ~ 
+brms_linear_eq <- p_fin ~ 
   n_median_rent + 
-  p_thirty_renter + 
+  p_stress + 
   n_average_age +
   #p_18_24  +
   p_vm + 
@@ -136,10 +136,10 @@ plot(brms_linear, combo = c("dens", "trace"))
 pairs(brms_linear)
 
 pp_linear <- posterior_predict(brms_linear, ndraws = ndraws)
-get_sse(colMeans(pp_linear), data_model$p_financialized)
+get_sse(colMeans(pp_linear), data_model$p_fin)
 
 # PPC density overlay
-ppc_dens_overlay(data_model$p_financialized, pp_linear[1:100,], size = 0.5,
+ppc_dens_overlay(data_model$p_fin, pp_linear[1:100,], size = 0.5,
                  trim = TRUE)
 
 # Posterior distributions
@@ -154,9 +154,9 @@ mcmc_areas(as.matrix(brms_linear), pars = covariate_pars, prob = 0.95) +
 
 ### 1.3.1 Prep model params ----------------------------------------------------
 
-brms_bin_eq <- n_financialized | trials(total)  ~
+brms_bin_eq <- n_fin | trials(total)  ~
   n_median_rent + 
-  p_thirty_renter + 
+  p_stress + 
   n_average_age +
   #p_18_24  +
   p_vm + 
@@ -191,10 +191,10 @@ plot(brms_binomial, combo = c("dens", "trace"))
 pairs(brms_binomial)
 
 pp_bin <- posterior_predict(brms_binomial, ndraws = ndraws)
-get_sse((colMeans(pp_bin) / data_model$total), data_model$p_financialized)
+get_sse((colMeans(pp_bin) / data_model$total), data_model$p_fin)
 
 # PPC density overlay
-ppc_dens_overlay(data_model$p_financialized, 
+ppc_dens_overlay(data_model$p_fin, 
                  pred_to_proportion(pp_bin, data_model$total, 100),
                  size = 0.5,
                  trim = TRUE)
@@ -247,10 +247,10 @@ plot(brms_bym, combo = c("dens", "trace"))
 pairs(brms_bym, pars = covariate_pars)
 
 pp_bym <- posterior_predict(brms_bym, ndraws = ndraws)
-get_sse((colMeans(pp_bym) / data_model$total), data_model$p_financialized)
+get_sse((colMeans(pp_bym) / data_model$total), data_model$p_fin)
 
 # PPC density overlay
-ppc_dens_overlay(data_model$p_financialized, 
+ppc_dens_overlay(data_model$p_fin, 
                  pred_to_proportion(pp_bym, data_model$total, 100),
                  size = 0.5, trim = TRUE)
 
@@ -288,7 +288,7 @@ param_draws_linear <-
   select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
          `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_thirty_renter,
+         `% renters' in stress` = b_p_stress,
          `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
          `% 1 year mob.` = b_p_mobility_one_year,
@@ -302,7 +302,7 @@ param_draws_log <-
   select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
          `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_thirty_renter,
+         `% renters' in stress` = b_p_stress,
          `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
          `% 1 year mob.` = b_p_mobility_one_year,
@@ -316,7 +316,7 @@ param_draws_bym <-
   select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
          `median rent`         = b_n_median_rent,
-         `% renter stress`     = b_p_thirty_renter,
+         `% renter stress`     = b_p_stress,
          `average age`         = b_n_average_age, 
          `% vis. minorities`   = b_p_vm,
          `% 1 year mobility`   = b_p_mobility_one_year,

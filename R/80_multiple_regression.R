@@ -7,7 +7,7 @@
 library(Hmisc)
 library(corrplot)
 
-autocor <- na.omit(kmeans_CT %>% select(-GeoUID, -dwellings, -p_renter, -p_financialized)) %>% 
+autocor <- na.omit(kmeans_CT %>% select(-GeoUID, -dwellings, -p_renter, -p_fin)) %>% 
   set_names(c("P. renters' housing stress", "Median rent", "Avg. value dwellings",
               "P. condos dwellings", "P. major repairs",
               "P. visible minorities", "P. immigrants", "P. one year mobility",
@@ -30,45 +30,45 @@ reg_kmeans_CT <- na.omit(kmeans_CT %>% select(-GeoUID, -dwellings, -p_renter)) %
               "Change in renter dwellings", "Distance from downtown", 
               "Asking rents", "P. financialized rental ownership"))
 
-reg1 <- lm(p_financialized ~ p_thirty_renter + median_rent + p_condo + p_immigrants + p_vm +
+reg1 <- lm(p_fin ~ p_stress + median_rent + p_condo + p_immigrants + p_vm +
              p_mobility_one_year + distance_dt + change_renter_dwellings + 
-             asking_rent + average_value_dwellings, data=reg_kmeans_CT)
+             asking_rent + avg_value, data=reg_kmeans_CT)
 reg_kmeans_CT$reg1pred <- predict(reg1)
 reg_kmeans_CT$reg1res <- rstandard(reg1)
 summary(reg1)
 
-reg2 <- lm(p_financialized ~ p_condo + p_immigrants + p_mobility_one_year + 
+reg2 <- lm(p_fin ~ p_condo + p_immigrants + p_mobility_one_year + 
              distance_dt + change_renter_dwellings + asking_rent, 
            data=reg_kmeans_CT)
 reg_kmeans_CT$reg2pred <- predict(reg2)
 reg_kmeans_CT$reg2res <- rstandard(reg2)
 summary(reg2)
 
-reg3 <- lm(p_financialized ~ p_thirty_renter + median_rent + p_mobility_one_year + 
+reg3 <- lm(p_fin ~ p_stress + median_rent + p_mobility_one_year + 
              p_immigrants, data=reg_kmeans_CT)
 reg_kmeans_CT$reg3pred <- predict(reg3)
 reg_kmeans_CT$reg3res <- rstandard(reg3)
 summary(reg3)
 
-reg4 <- lm(p_financialized ~ p_thirty_renter + median_rent + p_immigrants, 
+reg4 <- lm(p_fin ~ p_stress + median_rent + p_immigrants, 
            data=reg_kmeans_CT)
 reg_kmeans_CT$reg4pred <- predict(reg4)
 reg_kmeans_CT$reg4res <- rstandard(reg4)
 summary(reg4)
 
-reg5 <- lm(p_financialized ~ p_thirty_renter + median_rent + p_immigrants +
+reg5 <- lm(p_fin ~ p_stress + median_rent + p_immigrants +
              p_mobility_one_year + asking_rent, data=reg_kmeans_CT)
 reg_kmeans_CT$reg5pred <- predict(reg5)
 reg_kmeans_CT$reg5res <- rstandard(reg5)
 summary(reg5)
 
-reg6 <- lm(p_financialized ~ p_thirty_renter + median_rent + p_mobility_one_year + 
-             p_immigrants + average_value_dwellings, data=reg_kmeans_CT)
+reg6 <- lm(p_fin ~ p_stress + median_rent + p_mobility_one_year + 
+             p_immigrants + avg_value, data=reg_kmeans_CT)
 reg_kmeans_CT$reg6pred <- predict(reg6)
 reg_kmeans_CT$reg6res <- rstandard(reg6)
 summary(reg6)
 
-reg7 <- lm(p_financialized ~ p_thirty_renter + median_rent + p_mobility_one_year + 
+reg7 <- lm(p_fin ~ p_stress + median_rent + p_mobility_one_year + 
              p_immigrants, data=reg_kmeans_CT)
 reg_kmeans_CT$reg7pred <- predict(reg7)
 reg_kmeans_CT$reg7res <- rstandard(reg7)

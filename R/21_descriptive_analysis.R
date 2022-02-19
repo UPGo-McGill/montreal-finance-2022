@@ -14,7 +14,7 @@ qs::qload("output/stat_model_data.qsm")
 ggplot(gather(dplyr::select(as_tibble(data_model_f), 
                             -geometry, 
                             -total, 
-                            -n_financialized,
+                            -n_fin,
                             -GeoUID)), aes(value)) + 
   geom_histogram(bins = 10) + 
   facet_wrap(~key, scales = 'free_x')
@@ -22,8 +22,8 @@ ggplot(gather(dplyr::select(as_tibble(data_model_f),
 data_model_f %>%
   as.tibble() %>%
   dplyr::select(-geometry, -GeoUID) %>%
-  gather(-p_financialized, key = "var", value = "value") %>% 
-  ggplot(aes(x = value, y = p_financialized)) +
+  gather(-p_fin, key = "var", value = "value") %>% 
+  ggplot(aes(x = value, y = p_fin)) +
   geom_point() +
   facet_wrap(~ var, scales = "free")
 
@@ -37,15 +37,15 @@ data_model_f %>%
 
 # Exploratory Spatial Diagnostics ----------------------------------------------
 
-OLS_eq <- p_financialized ~ n_median_rent + 
-  p_thirty_renter + 
+OLS_eq <- p_fin ~ n_median_rent + 
+  p_stress + 
   average_age +
   p_vm + 
   p_mobility_one_year + 
   p_five_more_storeys + 
   p_built_after_2005
   
-binomial_eq <- cbind(n_financialized, total) ~ p_thirty_renter + 
+binomial_eq <- cbind(n_fin, total) ~ p_stress + 
   n_median_rent + 
   p_mobility_one_year + 
   p_vm + 

@@ -22,9 +22,9 @@ LL_CT_summary <-
   st_drop_geometry() |> 
   group_by(GeoUID, fin) |> 
   summarize(rental_units = sum(number_rental_units)) |> 
-  summarize(n_financialized = sum(rental_units[fin]),
+  summarize(n_fin = sum(rental_units[fin]),
             total = sum(rental_units),
-            p_financialized = n_financialized / total,
+            p_fin = n_fin / total,
             .groups = "drop")
 
 
@@ -33,14 +33,14 @@ LL_CT_summary <-
 data_CT <- 
   CT |> 
   left_join(LL_CT_summary, by = "GeoUID") |> 
-  mutate(p_financialized = coalesce(p_financialized, 0),
+  mutate(p_fin = coalesce(p_fin, 0),
          total = coalesce(total, 0)) |> 
-  relocate(geometry, .after = p_financialized)
+  relocate(geometry, .after = p_fin)
 
 LL_CT_to_join <- 
   data_CT |> 
   st_drop_geometry() |> 
-  select(GeoUID, n_financialized:p_financialized)
+  select(GeoUID, n_fin:p_fin)
 
 data_building <- 
   LL_CT |> 
@@ -56,9 +56,10 @@ data_CT <-
             n_rentals = sum(number_rental_units),
             p_built_after_2005 = n_after_2005 / n_rentals,
             .groups = "drop") |>
-  select(-n_after_2005, -n_rentals) |>
+  select(-n_after_2005) |>
   left_join(data_CT, by = "GeoUID") |>
-  relocate(p_built_after_2005, .after = p_financialized) |>
+  relocate(p_built_after_2005, .after = p_fin) |>
+  relocate(n_rentals, .after = dwellings) |> 
   st_as_sf()
 
   

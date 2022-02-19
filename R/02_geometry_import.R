@@ -30,12 +30,11 @@ DA <-
   st_transform(32618) |> 
   select(-c(`Shape Area`:Households, CSD_UID:`Area (sq km)`)) |> 
   set_names(c("dwellings", "GeoUID", "parent_condo", "condo", "parent_tenure", 
-              "renter", "parent_thirty", "p_thirty_renter", "parent_repairs", 
-              "major_repairs", "median_rent", "average_value_dwellings", "vm", 
-              "parent_vm", "immigrants", "parent_immigrants", 
-              "mobility_one_year", "parent_mobility_one_year", 
-              "mobility_five_years", "parent_mobility_five_years", 
-              "geometry")) |> 
+              "renter", "parent_thirty", "p_stress", "parent_repairs", 
+              "major_repairs", "median_rent", "avg_value", "vm", "parent_vm", 
+              "immigrants", "parent_immigrants", "mobility_one_year",
+              "parent_mobility_one_year", "mobility_five_years", 
+              "parent_mobility_five_years", "geometry")) |> 
   mutate(p_condo = condo / parent_condo,
          p_renter = renter / parent_tenure, 
          p_repairs = major_repairs / parent_repairs,
@@ -43,9 +42,9 @@ DA <-
          p_immigrants = immigrants/parent_immigrants,
          p_mobility_one_year = mobility_one_year/parent_mobility_one_year,
          p_mobility_five_years = mobility_five_years/parent_mobility_five_years,
-         p_thirty_renter = p_thirty_renter / 100) |> 
-  select(GeoUID, dwellings, renter, p_thirty_renter, median_rent, 
-         average_value_dwellings, p_condo, p_renter, p_repairs, p_vm, 
+         p_stress = p_stress / 100) |> 
+  select(GeoUID, dwellings, renter, p_stress, median_rent, 
+         avg_value, p_condo, p_renter, p_repairs, p_vm, 
          p_immigrants, p_mobility_one_year, p_mobility_five_years) |> 
   as_tibble() |> 
   st_as_sf(agr = "constant")
@@ -68,8 +67,8 @@ CT <-
   select(-c(Type, Households, `Adjusted Population (previous Census)`:CSD_UID, 
             PR_UID:`Area (sq km)`)) |> 
   set_names(c("GeoUID", "dwellings", "parent_condo", "condo", "parent_tenure", 
-              "renter", "parent_thirty", "p_thirty_renter", "parent_repairs", 
-              "major_repairs", "median_rent", "average_value_dwellings", "vm",
+              "renter", "parent_thirty", "p_stress", "parent_repairs", 
+              "major_repairs", "median_rent", "avg_value", "vm",
               "parent_vm", "immigrants", "parent_immigrants", 
               "mobility_one_year", "parent_mobility_one_year", 
               "mobility_five_years", "parent_mobility_five_years", 
@@ -86,9 +85,9 @@ CT <-
          p_five_more_storeys = five_storeys/parent_storeys,
          p_18_24 = (age_18+age_19+age_20_24)/age_total,
          p_65_plus = age_65_plus/age_total,
-         p_thirty_renter = p_thirty_renter / 100) |> 
-  select(GeoUID, dwellings, renter, p_thirty_renter, median_rent, 
-         average_value_dwellings, p_condo, p_renter, p_repairs, p_vm, 
+         p_stress = p_stress / 100) |> 
+  select(GeoUID, dwellings, renter, p_stress, median_rent, 
+         avg_value, p_condo, p_renter, p_repairs, p_vm, 
          p_immigrants, p_mobility_one_year, p_mobility_five_years, 
          p_five_more_storeys, med_hh_income, p_18_24, p_65_plus, average_age) |> 
   as_tibble() |> 
@@ -168,43 +167,43 @@ boroughs <-
 
 # Streets -----------------------------------------------------------------
 
-streets <- 
-  (getbb("Région administrative de Montréal") * c(1.01, 0.99, 0.99, 1.01)) |> 
-  opq(timeout = 200) |> 
-  add_osm_feature(key = "highway") |> 
-  osmdata_sf()
-
-streets <-
-  rbind(
-    streets$osm_polygons |> st_set_agr("constant") |> st_cast("LINESTRING"), 
-    streets$osm_lines) |>
-  as_tibble() |> 
-  st_as_sf() |> 
-  st_transform(32618) |> 
-  st_set_agr("constant")
-
-streets <- 
-  streets |> 
-  filter(highway %in% c("primary", "secondary")) |>  
-  select(osm_id, name, highway, geometry)
-
-downtown_poly <- 
-  st_polygon(list(matrix(c(607000, 5038000,
-                           614000, 5038000,
-                           614000, 5045000,
-                           607000, 5045000,
-                           607000, 5038000), 
-                         ncol = 2, byrow = TRUE))) |> 
-  st_sfc(crs = 32618)
-
-streets_downtown <- 
-  streets |> 
-  st_intersection(downtown_poly)
+# streets <- 
+#   (getbb("Région administrative de Montréal") * c(1.01, 0.99, 0.99, 1.01)) |> 
+#   opq(timeout = 200) |> 
+#   add_osm_feature(key = "highway") |> 
+#   osmdata_sf()
+# 
+# streets <-
+#   rbind(
+#     streets$osm_polygons |> st_set_agr("constant") |> st_cast("LINESTRING"), 
+#     streets$osm_lines) |>
+#   as_tibble() |> 
+#   st_as_sf() |> 
+#   st_transform(32618) |> 
+#   st_set_agr("constant")
+# 
+# streets <- 
+#   streets |> 
+#   filter(highway %in% c("primary", "secondary")) |>  
+#   select(osm_id, name, highway, geometry)
+# 
+# downtown_poly <- 
+#   st_polygon(list(matrix(c(607000, 5038000,
+#                            614000, 5038000,
+#                            614000, 5045000,
+#                            607000, 5045000,
+#                            607000, 5038000), 
+#                          ncol = 2, byrow = TRUE))) |> 
+#   st_sfc(crs = 32618)
+# 
+# streets_downtown <- 
+#   streets |> 
+#   st_intersection(downtown_poly)
 
 
 # Save output and clean up ------------------------------------------------
 
-qsavem(boroughs, CT, CT_06, province, streets_downtown,
+qsavem(boroughs, CT, CT_06, province, #streets_downtown,
        file = "output/geometry.qsm", nthreads = availableCores())
 
 rm(boroughs_raw, DA, downtown, downtown_poly, streets)

@@ -54,7 +54,7 @@ ggsave(
 
 n_dens_draws <- n_y_rep
 ncols <- ncol(pp_bym)
-y_ppc_dens <- rep(data_model$p_financialized, 3)
+y_ppc_dens <- rep(data_model$p_fin, 3)
 
 y_pred_ppc_dens <- cbind(
   pp_linear[1:n_dens_draws,], 
@@ -91,7 +91,7 @@ ggsave("output/figures/ppc_dens.png",
 
 n_draws_points <- n_y_rep
 counts_ppc <- rep(data_model$total, n_y_rep)
-y_ppc  <- rep(data_model$p_financialized, n_y_rep)
+y_ppc  <- rep(data_model$p_fin, n_y_rep)
 
 ppc_linear <- 
   tibble(y_hat = as.vector(t(pp_linear[1:n_draws_points,])), y = y_ppc) |> 
@@ -241,7 +241,7 @@ linear_draws_df <-
   select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
          `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_thirty_renter,
+         `% renters' in stress` = b_p_stress,
          `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
          `% 1 year mob.` = b_p_mobility_one_year,
@@ -258,7 +258,7 @@ bin_draws_df <-
   select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
          `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_thirty_renter,
+         `% renters' in stress` = b_p_stress,
          `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
          `% 1 year mob.` = b_p_mobility_one_year,
@@ -275,7 +275,7 @@ bym_draws_df <-
   select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
          `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_thirty_renter,
+         `% renters' in stress` = b_p_stress,
          `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
          `% 1 year mob.` = b_p_mobility_one_year,

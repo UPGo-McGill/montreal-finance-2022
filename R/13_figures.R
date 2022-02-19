@@ -17,7 +17,7 @@ fig_1_full <-
   data_CT |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(aes(fill = p_financialized, colour = p_financialized), lwd = 0.3) +
+  geom_sf(aes(fill = p_fin, colour = p_fin), lwd = 0.3) +
   geom_rect(xmin = 607000, ymin = 5038000, xmax = 614000, ymax = 5045000,
             fill = NA, colour = "black", size = 0.3) +
   scale_fill_stepsn(name = "Financialized rental units", 
@@ -54,12 +54,12 @@ fig_1_map <-
 
 fig_1_hist <-
   data_CT |> 
-  mutate(fill = case_when(p_financialized > 0.6 ~ "4",
-                          p_financialized > 0.45 ~ "3",
-                          p_financialized > 0.3 ~ "2",
-                          p_financialized > 0.15 ~ "1",
+  mutate(fill = case_when(p_fin > 0.6 ~ "4",
+                          p_fin > 0.45 ~ "3",
+                          p_fin > 0.3 ~ "2",
+                          p_fin > 0.15 ~ "1",
                           TRUE ~ "0")) |> 
-  ggplot(aes(p_financialized, fill = fill, color=fill)) +
+  ggplot(aes(p_fin, fill = fill, color=fill)) +
   geom_histogram(bins = 30, alpha=fig_alpha) +
   scale_x_continuous(name = NULL, #"Financialized rental units",
                      labels = scales::percent) +
@@ -101,16 +101,16 @@ p1_cor <-
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   st_drop_geometry() |> 
-  select(p_thirty_renter, p_financialized) |> 
+  select(p_stress, p_fin) |> 
   cor() |> 
   as_tibble() |> 
   slice(1) |> 
-  pull(p_financialized)
+  pull(p_fin)
 
 p1 <-
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
-  ggplot(aes(p_thirty_renter, p_financialized, 
+  ggplot(aes(p_stress, p_fin, 
              size = parent_renter, alpha = parent_renter)) +
   geom_point(color = col_palette[1]) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p1_cor) +
@@ -130,17 +130,17 @@ p2_cor <-
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   st_drop_geometry() |> 
-  select(median_rent, p_financialized) |> 
+  select(median_rent, p_fin) |> 
   cor() |> 
   as_tibble() |> 
   slice(1) |> 
-  pull(p_financialized)
+  pull(p_fin)
 
 p2 <- 
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   filter(median_rent > 500, median_rent < 1800) |> 
-  ggplot(aes(median_rent, p_financialized, 
+  ggplot(aes(median_rent, p_fin, 
              size = parent_renter, alpha = parent_renter)) +
   geom_point(color = col_palette[2]) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p2_cor) +
@@ -160,16 +160,16 @@ p3_cor <-
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   st_drop_geometry() |> 
-  select(p_mobility_one_year, p_financialized) |> 
+  select(p_mobility_one_year, p_fin) |> 
   cor() |> 
   as_tibble() |> 
   slice(1) |> 
-  pull(p_financialized)
+  pull(p_fin)
 
 p3 <- 
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
-  ggplot(aes(p_mobility_one_year, p_financialized, size = parent_renter, 
+  ggplot(aes(p_mobility_one_year, p_fin, size = parent_renter, 
              alpha = parent_renter)) +
   geom_point(color = col_palette[3]) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p3_cor) +
@@ -189,16 +189,16 @@ p4_cor <-
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   st_drop_geometry() |> 
-  select(p_vm, p_financialized) |> 
+  select(p_vm, p_fin) |> 
   cor() |> 
   as_tibble() |> 
   slice(1) |> 
-  pull(p_financialized)
+  pull(p_fin)
 
 p4 <-
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
-  ggplot(aes(p_vm, p_financialized, alpha = dwellings, size = dwellings)) +
+  ggplot(aes(p_vm, p_fin, alpha = dwellings, size = dwellings)) +
   geom_point(color = col_palette[5]) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p4_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
@@ -217,17 +217,17 @@ p5_cor <-
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   st_drop_geometry() |> 
-  select(p_five_more_storeys, p_financialized) |> 
+  select(p_five_more_storeys, p_fin) |> 
   cor() |> 
   as_tibble() |> 
   slice(1) |> 
-  pull(p_financialized)
+  pull(p_fin)
 
 p5 <-
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   ggplot(aes(p_five_more_storeys, 
-             p_financialized, alpha = parent_renter, size = parent_renter)) +
+             p_fin, alpha = parent_renter, size = parent_renter)) +
   geom_point(color = col_palette[7]) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p5_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
@@ -246,17 +246,17 @@ p6_cor <-
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   st_drop_geometry() |> 
-  select(p_18_24, p_financialized) |> 
+  select(p_18_24, p_fin) |> 
   cor() |> 
   as_tibble() |> 
   slice(1) |> 
-  pull(p_financialized)
+  pull(p_fin)
 
 p6 <-
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   ggplot(aes(p_18_24,
-             p_financialized, alpha = parent_renter, size = parent_renter)) +
+             p_fin, alpha = parent_renter, size = parent_renter)) +
   geom_point(color = col_palette[9]) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p6_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
@@ -361,12 +361,12 @@ ggsave("output/figures/figure_4.png", plot = fig_4, width = 8, height = 5,
 
 # First part
 cluster_averages |> 
-  select(cluster, p_financialized, median_rent, asking_rent, p_thirty_renter,
-         med_hh_income, average_value_dwellings, p_renter, p_condo, 
+  select(cluster, p_fin, median_rent, asking_rent, p_stress,
+         med_hh_income, avg_value, p_renter, p_condo, 
          p_built_after_2005) |> 
   mutate(across(starts_with("p_"), scales::percent, 0.1),
          across(c(median_rent, asking_rent, med_hh_income, 
-                  average_value_dwellings), scales::dollar, 1)) |> 
+                  avg_value), scales::dollar, 1)) |> 
   set_names(c("Cluster", "Financialized rental units", "Median rent",
               "Average asking rent", "Renters in housing stress", 
               "After-tax median HH income", "Average dwelling value",

@@ -26,7 +26,7 @@ data_building |>
 # Spatial distribution ----------------------------------------------------
 
 data_CT |> 
-  select(total, n_financialized) |> 
+  select(total, n_fin) |> 
   st_set_agr("constant") |> 
   st_centroid() |> 
   st_intersection(st_set_agr(boroughs, "constant")) |> 
@@ -34,13 +34,13 @@ data_CT |>
   group_by(borough) |> 
   summarize(
     total = sum(total, na.rm = TRUE),
-    fin = sum(n_financialized, na.rm = TRUE),
+    fin = sum(n_fin, na.rm = TRUE),
     fin_pct = fin / total) |> 
   arrange(fin_pct) |> 
   mutate(fin_pct = scales::percent(fin_pct, 0.1))
 
 data_CT |> 
-  pull(p_financialized) |> 
+  pull(p_fin) |> 
   summary() |> 
   as.numeric() |> 
   scales::percent(0.1)

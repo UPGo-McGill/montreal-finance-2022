@@ -15,8 +15,8 @@ CT_raw <-
   select(-c(Type, Households, `Adjusted Population (previous Census)`:CSD_UID, 
             PR_UID:`Area (sq km)`)) |> 
   set_names(c("GeoUID", "dwellings", "parent_condo", "condo", "parent_tenure", 
-              "renter", "parent_thirty", "p_thirty_renter", "parent_repairs", 
-              "major_repairs", "median_rent", "average_value_dwellings", "vm",
+              "renter", "parent_thirty", "p_stress", "parent_repairs", 
+              "major_repairs", "median_rent", "avg_value", "vm",
               "parent_vm", "immigrants", "parent_immigrants", 
               "mobility_one_year", "parent_mobility_one_year", 
               "mobility_five_years", "parent_mobility_five_years", 
@@ -31,9 +31,9 @@ CT_raw <-
          p_mobility_five_years = mobility_five_years/parent_mobility_five_years,
          p_five_more_storeys = five_storeys/parent_storeys,
          p_18_24 = (age_18+age_19+age_20_24)/age_total,
-         p_thirty_renter = p_thirty_renter / 100) |> 
-  select(GeoUID, dwellings, renter, p_thirty_renter, median_rent, 
-         average_value_dwellings, p_condo, p_renter, p_repairs, p_vm, 
+         p_stress = p_stress / 100) |> 
+  select(GeoUID, dwellings, renter, p_stress, median_rent, 
+         avg_value, p_condo, p_renter, p_repairs, p_vm, 
          p_immigrants, p_mobility_one_year, p_mobility_five_years, 
          p_five_more_storeys, med_hh_income, p_18_24) |> 
   as_tibble() |> 

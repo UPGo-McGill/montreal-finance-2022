@@ -12,10 +12,10 @@ options(scipen=999)
 
 # OLS Models -------------------------------------------------------------------
 
-reg.eq1 <- log_financialized ~ p_thirty_renter + n_median_rent + p_mobility_one_year + p_vm + log_five_more_storeys + log_18_24
-reg.eq2 <- p_financialized ~ p_thirty_renter + n_median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + p_18_24
-reg.eq3 <- p_financialized ~ p_thirty_renter + median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + p_18_24
-reg.eq4 <- p_financialized ~ ss_thirty_renter + ss_median_rent + ss_mobility_one_year + ss_vm + ss_five_more_storeys + ss_18_24
+reg.eq1 <- log_financialized ~ p_stress + n_median_rent + p_mobility_one_year + p_vm + log_five_more_storeys + log_18_24
+reg.eq2 <- p_fin ~ p_stress + n_median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + p_18_24
+reg.eq3 <- p_fin ~ p_stress + median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + p_18_24
+reg.eq4 <- p_fin ~ ss_thirty_renter + ss_median_rent + ss_mobility_one_year + ss_vm + ss_five_more_storeys + ss_18_24
 
 reg1 <- lm(reg.eq1, data = data_model_f)
 summary(reg1)
@@ -41,16 +41,16 @@ data_model_f$reg3_fit <- reg3$fitted.values
 data_model_f$reg4_res <- reg4$residuals
 data_model_f$reg4_fit <- reg4$fitted.values
 
-sse_reg1 <- sum((data_model_f$reg1_fit - data_model_f$p_financialized)^2)
+sse_reg1 <- sum((data_model_f$reg1_fit - data_model_f$p_fin)^2)
 sse_reg1
 
-sse_reg2 <- sum((data_model_f$reg2_fit - data_model_f$p_financialized)^2)
+sse_reg2 <- sum((data_model_f$reg2_fit - data_model_f$p_fin)^2)
 sse_reg2
 
-sse_reg3 <- sum((data_model_f$reg3_fit - data_model_f$p_financialized)^2)
+sse_reg3 <- sum((data_model_f$reg3_fit - data_model_f$p_fin)^2)
 sse_reg3
 
-sse_reg4 <- sum((data_model_f$reg4_fit - data_model_f$p_financialized)^2)
+sse_reg4 <- sum((data_model_f$reg4_fit - data_model_f$p_fin)^2)
 sse_reg4
 
 # OLS Diagnostics --------------------------------------------------------------
@@ -161,10 +161,10 @@ imSLXSum
 data_model_f$SLX_res <- OLS_SLX$residuals
 data_model_f$SLX_fit <- OLS_SLX$fitted.values
 
-sse_slx <- sum((data_model_f$SLX_fit - data_model_f$p_financialized)^2)
+sse_slx <- sum((data_model_f$SLX_fit - data_model_f$p_fin)^2)
 sse_slx
 
-plot(data_model_f$SLX_fit, data_model_f$p_financialized)
+plot(data_model_f$SLX_fit, data_model_f$p_fin)
 
 ## SAR -------------------------------------------------------------------------
 
@@ -178,10 +178,10 @@ imSARSum
 data_model_f$SAR_res <- lmSAR$residuals
 data_model_f$SAR_fit <- lmSAR$fitted.values
 
-sse_sar <- sum((data_model_f$SAR_fit - data_model_f$p_financialized)^2)
+sse_sar <- sum((data_model_f$SAR_fit - data_model_f$p_fin)^2)
 sse_sar
 
-plot(data_model_f$SAR_fit, data_model_f$p_financialized)
+plot(data_model_f$SAR_fit, data_model_f$p_fin)
 
 ## SLD -------------------------------------------------------------------------
 
@@ -195,10 +195,10 @@ imDurbinSum
 data_model_f$SLD_res <- lmDurbin$residuals
 data_model_f$SLD_fit <- lmDurbin$fitted.values
 
-sse_sld <- sum((data_model_f$SLD_fit - data_model_f$p_financialized)^2)
+sse_sld <- sum((data_model_f$SLD_fit - data_model_f$p_fin)^2)
 sse_sld
 
-plot(data_model_f$SLD_fit, data_model_f$p_financialized)
+plot(data_model_f$SLD_fit, data_model_f$p_fin)
 
 ## Spatial Model Diagnostics ---------------------------------------------------
 
