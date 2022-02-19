@@ -4,6 +4,8 @@ source("R/01_startup.R")
 qload("output/data.qsm", nthreads = availableCores())
 qload("output/geometry.qsm", nthreads = availableCores())
 qload("output/cluster.qsm", nthreads = availableCores())
+qload("output/models/extra.qsm", nthreads = availableCores())
+
 library(patchwork)
 library(ggpubr)
 fig_alpha <- 0.8
@@ -15,7 +17,7 @@ fig_1_full <-
   data_CT |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(aes(fill = p_financialized, colour = p_financialized), lwd = 0.2) +
+  geom_sf(aes(fill = p_financialized, colour = p_financialized), lwd = 0.3) +
   geom_rect(xmin = 607000, ymin = 5038000, xmax = 614000, ymax = 5045000,
             fill = NA, colour = "black", size = 0.3) +
   scale_fill_stepsn(name= "Financialized rental units", 
@@ -33,12 +35,13 @@ fig_1_full <-
                       guide = NULL) +
   gg_bbox(boroughs) +
   theme_void() +
-  theme(legend.position = "bottom",
+  theme(text = element_text(family = "Futura"),
+        legend.position = "bottom",
         legend.text = element_text(size = 7))
 
 fig_1_inset <- 
   fig_1_full +
-  geom_sf(data = streets_downtown, size = 0.4, colour = "grey93") +
+  # geom_sf(data = streets_downtown, size = 0.4, colour = "grey93") +
   coord_sf(xlim = c(607000, 614000), ylim = c(5038000, 5045000),
            expand = FALSE) +
   theme(legend.position = "none",
@@ -46,8 +49,8 @@ fig_1_inset <-
 
 fig_1_map <- 
   fig_1_full + 
-  inset_element(fig_1_inset, left = 0, bottom = 0.47, right = 0.53, top = 0.92,
-                ignore_tag = TRUE)
+  inset_element(fig_1_inset, left = 0.02, bottom = 0.47, right = 0.53, 
+                top = 0.97, ignore_tag = TRUE)
 
 fig_1_hist <-
   data_CT |> 
@@ -66,22 +69,28 @@ fig_1_hist <-
   scale_color_manual(values = c("#F3B45F", "#EE7A35", "#DA6D61", "#BC6591", 
                                "#A53B6A"), guide = NULL) +
   geom_hline(yintercept = 0, color = "grey86") +
-  theme_minimal()
+  theme_minimal() +
+  theme(text = element_text(family = "Futura"))
+  
 
 fig_1_layout <- "
-AABB
-AABB
-AABB
-AABB
-AABB
-CCCC"
+AAABB
+AAABB
+AAABB
+AAABB
+AAABB
+AAABB
+AAABB
+AAABB
+CCCCC
+"
 
 fig_1 <- fig_1_map + fig_1_hist + guide_area() + 
-  theme(legend.position = "bottom") + 
+  theme(legend.position = "bottom", text = element_text(family = "Futura")) + 
   plot_layout(design = fig_1_layout, guides = "collect") + 
   plot_annotation(tag_levels = "A") 
 
-ggsave("output/figures/figure_1.png", plot = fig_1, width = 8, height = 5, 
+ggsave("output/figures/figure_1.png", plot = fig_1, width = 6.5, height = 3.8, 
        units = "in")
 
 
@@ -105,15 +114,16 @@ p1 <-
              size = parent_renter, alpha = parent_renter)) +
   geom_point(color = col_palette[1]) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p1_cor) +
-  scale_x_continuous(name = "Renters in housing stress",
+  stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
+           family = "Futura", size = 2.5) +
+  scale_x_continuous(name = "Renters in housing stress", 
                      label = scales::percent) +
-  scale_y_continuous("Financialized rental units",
-                     label = scales::percent, limits = c(0, 1)) +
-  scale_size_continuous(range = c(1, 3), guide = "none") +
+  scale_y_continuous("Financialized rental units", label = scales::percent, 
+                     limits = c(0, 1)) +
+  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`, `~")),
-           label.x = 0, label.y = 0.875)
+  theme(text = element_text(family = "Futura", size = 6.5))
 
 # Median rent
 p2_cor <- 
@@ -129,18 +139,21 @@ p2_cor <-
 p2 <- 
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  filter(median_rent > 500, median_rent < 1800) |> 
   ggplot(aes(median_rent, p_financialized, 
              size = parent_renter, alpha = parent_renter)) +
   geom_point(color = col_palette[2]) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p2_cor) +
-  scale_x_continuous(name = "Median rent", label = scales::dollar) +
-  scale_y_continuous("Financialized rental units",
-                     label = scales::percent, limits = c(0, 1)) +
-  scale_size_continuous(range = c(1, 3), guide = "none") +
+  stat_cor(aes(label = ..r.label..), label.x = 500, label.y = 0.875,
+           family = "Futura", size = 2.5) +
+  scale_x_continuous(name = "Median rent", label = scales::dollar,
+                     limits = c(500, NA)) +
+  scale_y_continuous("Financialized rental units", label = scales::percent, 
+                     limits = c(0, 1)) +
+  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`, `~")),
-           label.x = 0, label.y = 0.875)
+  theme(text = element_text(family = "Futura", size = 6.5))
 
 # One-year mobility
 p3_cor <- 
@@ -160,15 +173,16 @@ p3 <-
              alpha = parent_renter)) +
   geom_point(color = col_palette[3]) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p3_cor) +
+  stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
+           family = "Futura", size = 2.5) +
   scale_x_continuous(name = "Households having moved in the past year",
                      label = scales::percent) +
-  scale_y_continuous("Financialized rental units",
-                     label = scales::percent, limits = c(0, 1)) +
-  scale_size_continuous(range = c(1, 3), guide = "none") +
+  scale_y_continuous("Financialized rental units", label = scales::percent, 
+                     limits = c(0, 1)) +
+  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
   scale_alpha_continuous(guide = "none") +
-  theme_minimal() +
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`, `~")),
-           label.x = 0, label.y = 0.875)
+  theme_minimal() + 
+  theme(text = element_text(family = "Futura", size = 6.5))
 
 # Visible minorities
 p4_cor <- 
@@ -187,15 +201,15 @@ p4 <-
   ggplot(aes(p_vm, p_financialized, alpha = dwellings, size = dwellings)) +
   geom_point(color = col_palette[5]) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p4_cor) +
-  scale_x_continuous(name = "Visible minorities",
-                     label = scales::percent) +
-  scale_y_continuous("Financialized rental units",
-                     label = scales::percent, limits = c(0, 1)) +
-  scale_size_continuous(range = c(1, 3), guide = "none") +
+  stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
+           family = "Futura", size = 2.5) +
+  scale_x_continuous(name = "Visible minorities", label = scales::percent) +
+  scale_y_continuous("Financialized rental units", label = scales::percent, 
+                     limits = c(0, 1)) +
+  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`, `~")),
-           label.x = 0, label.y = 0.875)
+  theme(text = element_text(family = "Futura", size = 6.5))
 
 
 # Five+ stories
@@ -216,15 +230,16 @@ p5 <-
              p_financialized, alpha = parent_renter, size = parent_renter)) +
   geom_point(color = col_palette[7]) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p5_cor) +
+  stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
+           family = "Futura", size = 2.5) +
   scale_x_continuous(name = "Households in 5+ storey buildings", 
-                     label = scales::dollar) +
-  scale_y_continuous("Financialized rental units",
-                     label = scales::percent, limits = c(0, 1)) +
-  scale_size_continuous(range = c(1, 3), guide = "none") +
+                     label = scales::percent) +
+  scale_y_continuous("Financialized rental units", label = scales::percent, 
+                     limits = c(0, 1)) +
+  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 0, label.y = 0.875)
+  theme(text = element_text(family = "Futura", size = 6.5))
 
 # 18-24 year olds
 p6_cor <- 
@@ -244,57 +259,48 @@ p6 <-
              p_financialized, alpha = parent_renter, size = parent_renter)) +
   geom_point(color = col_palette[9]) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p6_cor) +
-  scale_x_continuous(name = "Population aged 18-24",
-                     label = scales::percent) +
-  scale_y_continuous("Financialized rental units",
-                     label = scales::percent, limits = c(0, 1)) +
-  scale_size_continuous(range = c(1, 3), guide = "none") +
+  stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
+           family = "Futura", size = 2.5) +
+  scale_x_continuous(name = "Population aged 18-24", label = scales::percent) +
+  scale_y_continuous("Financialized rental units", label = scales::percent, 
+                     limits = c(0, 1)) +
+  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`, `~")),
-           label.x = 0, label.y = 0.875)
+  theme(text = element_text(family = "Futura", size = 6.5))
 
 fig_2 <- p1 + p2 + p3 + p4 + p5 + p6
 
-ggsave("output/figures/figure_2.pdf", plot = fig_2, width = 12, 
-       height = 8, units = "in", useDingbats = FALSE)
+ggsave("output/figures/figure_2.png", plot = fig_2, width = 6.5, 
+       height = 4.5, units = "in")
 
 
-# Figure 3. Multiple regression -------------------------------------------
+# Figure 3. Credible intervals --------------------------------------------
 
+pos <- position_nudge(y = case_when(
+  combined$model == "bym" ~ 0, 
+  combined$model == "binomial" ~ 0.1,
+  combined$model == "linear" ~ 0.2))
 
-
-pos <- position_nudge(y = if_else(
-  combined$model == "bym", 0, if_else(combined$model == "binomial", 0.1, 0.2)))
-
-point_est_p <-
+fig_3 <-
   combined |> 
-  ggplot(aes(x = m, y = parameter, color = model)) + 
-  geom_vline(xintercept = 0.0, color = "red", alpha = 1, size = 0.3, lty = 2) + 
+  ggplot(aes(x = m, y = parameter, colour = model)) + 
+  geom_vline(xintercept = 0.0, colour = "red", alpha = 1, size = 0.3, lty = 2) + 
   geom_linerange(aes(xmin = l, xmax = h), position = pos, size = 2) +
   geom_linerange(aes(xmin = ll, xmax = hh), position = pos) +
-  geom_linerange(aes(xmin = ll, xmax = hh), position = pos)+
+  geom_linerange(aes(xmin = ll, xmax = hh), position = pos) +
   geom_point(position = pos, size = 1, alpha = 10) +
   scale_colour_manual(breaks = c("linear", "binomial", "bym"),
                       labels = c("linear", "binomial", "binomial-bym2"), 
-                      values = c( "#3399CC","#CC6699", "#FF6600"),
-                      name = "Model") + 
+                      values = col_palette[c(3, 2, 1)], name = "Model") + 
   xlab("Estimate") + 
-  ylab("Parameter") + 
-  scale_y_discrete(limits = rev) + 
-  theme_minimal()
+  scale_y_discrete(name = NULL, limits = rev) + 
+  theme_minimal() +
+  theme(legend.position = "bottom", text = element_text(family = "Futura"),
+        plot.background = element_rect(fill = "white"))
 
-
-
-
-ggsave("output/figures/point_est_p.png", 
-       plot = point_est_p, 
-       width = 8, 
-       height = 5, 
+ggsave("output/figures/figure_3.png", plot = fig_3, width = 6.5, height = 4, 
        units = "in")
-
-
-
 
 
 # Figure 4. Cluster map ---------------------------------------------------
@@ -303,9 +309,10 @@ fig_4_poly <-
   data_CT |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(fill = 'white', color = 'grey', alpha=1) +
+  geom_sf(fill = 'white', color = 'grey', alpha = 1) +
   geom_sf(aes(fill = cluster), colour = "transparent") +
-  scale_fill_manual(name = NULL, values = alpha(col_palette[c(1, 3, 4, 2, 5)]), fig_alpha) +
+  scale_fill_manual(name = NULL, values = alpha(col_palette[c(1, 3, 4, 2, 5)]), 
+                    fig_alpha) +
   guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
   upgo::gg_bbox(data_CT) +
   theme_void() +
