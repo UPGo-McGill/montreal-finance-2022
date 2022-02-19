@@ -52,16 +52,17 @@ data_CT <-
   data_CT |> 
   left_join(cluster_with_id) |> 
   mutate(cluster = case_when(
-           cluster == 1 ~ "3. Suburban non-financialized",
-           cluster == 4 ~ "1. Precarious and student financialized",
-           cluster == 2 ~ "4. Immigrant periphery non-financialized",
-           cluster == 5 ~ "2. Affluent financialized",
-           cluster == 3 ~ "5. Gentrifying non-financialized"), 
+           cluster == 1 ~ "3. Non-financialized suburbs",
+           cluster == 4 ~ "1. Financialized precarious and student",
+           cluster == 2 ~ "5. Non-financialized immigrant periphery",
+           cluster == 5 ~ "2. Financialized affluent",
+           cluster == 3 ~ "4. Non-financialized gentrified"), 
          cluster = factor(cluster, levels = c(
-           "1. Precarious and student financialized", 
-           "2. Affluent financialized",
-           "3. Suburban non-financialized", "4. Gentrifying non-financialized",
-           "5. Immigrant periphery non-financialized"))) |> 
+           "1. Financialized precarious and student", 
+           "2. Financialized affluent",
+           "3. Non-financialized suburbs", 
+           "4. Non-financialized gentrified",
+           "5. Non-financialized immigrant periphery"))) |> 
   relocate(cluster, .before = geometry)
 
 data_building <- 
