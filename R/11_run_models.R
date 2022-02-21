@@ -50,13 +50,13 @@ pred_to_proportion <- function(draw_m, totals, n) {
 
 ### 1.1.1 Prep model params ----------------------------------------------------
 
-glm_eq <- cbind(n_fin, total) ~ p_stress + 
+glm_eq <- cbind(n_fin, total) ~ 
   n_median_rent + 
-  p_mobility_one_year + 
-  p_vm + 
-  p_five_more_storeys + 
-  #p_18_24 +
+  p_stress + 
   n_average_age +
+  p_vm + 
+  p_mobility_one_year + 
+  p_five_more_storeys + 
   p_built_after_2005
 
 
@@ -97,7 +97,6 @@ covariate_pars <- c("b_Intercept",
                     "b_p_vm",
                     "b_p_mobility_one_year",
                     "b_p_five_more_storeys",
-                    #"b_p_18_24",
                     "b_p_built_after_2005")
 
 
@@ -107,7 +106,6 @@ brms_linear_eq <- p_fin ~
   n_median_rent + 
   p_stress + 
   n_average_age +
-  #p_18_24  +
   p_vm + 
   p_mobility_one_year + 
   p_five_more_storeys + 
@@ -160,7 +158,6 @@ brms_bin_eq <- n_fin | trials(total)  ~
   n_median_rent + 
   p_stress + 
   n_average_age +
-  #p_18_24  +
   p_vm + 
   p_mobility_one_year + 
   p_five_more_storeys + 
@@ -294,7 +291,6 @@ param_draws_linear <-
          `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
          `% 1 year mob.` = b_p_mobility_one_year,
-         #`% pop 18-24` = b_p_18_24,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% units built after 2005` = b_p_built_after_2005)
 
@@ -308,7 +304,6 @@ param_draws_log <-
          `average age` = b_n_average_age, 
          `% visible minorities` = b_p_vm,
          `% 1 year mob.` = b_p_mobility_one_year,
-         #`% pop 18-24` = b_p_18_24,
          `% dwelling in 5+ st.` = b_p_five_more_storeys,
          `% units built after 2005` = b_p_built_after_2005)
 
@@ -322,7 +317,6 @@ param_draws_bym <-
          `average age`         = b_n_average_age, 
          `% vis. minorities`   = b_p_vm,
          `% 1 year mobility`   = b_p_mobility_one_year,
-         #`% pop 18-24` = b_p_18_24,
          `% dwellings 5+ st.`  = b_p_five_more_storeys,
          `% units built 2005+` = b_p_built_after_2005)
 

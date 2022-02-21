@@ -76,7 +76,7 @@ mt_to_file <- moran_tests %>%
   mutate(variable = c("% financialized", 
                       "Median rent",
                       "% renters' housing stress",
-                      "% average age", 
+                      "average age", 
                       "% visible minorities",
                       "% one year mobility", 
                       "% dwelling in five+ stories", 
