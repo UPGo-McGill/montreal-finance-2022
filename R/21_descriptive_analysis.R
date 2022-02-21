@@ -73,14 +73,14 @@ mt_to_file <- moran_tests %>%
          str_detect(variable, "^n_median") | 
          str_detect(variable, "^binomial") |
          str_detect(variable, "^n_average")) %>%
-  mutate(variable = c("% financialized", 
+  mutate(variable = c("Financialized (%)", 
                       "Median rent",
-                      "% renters' housing stress",
+                      "Renters' housing stress (%)",
                       "average age", 
-                      "% visible minorities",
-                      "% one year mobility", 
-                      "% dwelling in five+ stories", 
-                      "% units built after 2005",
+                      "Visible minorities (%)",
+                      "One year mobility (%)", 
+                      "Dwelling in five+ stories (%)", 
+                      "Units built after 2005 (%)",
                       "Binomial residuals")) %>%
   select(variable, observed, p.value)
          

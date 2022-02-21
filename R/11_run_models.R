@@ -17,12 +17,10 @@ library(tidybayes)
 
 options(scipen = 999)
 
-
 # 0.2 Load data ----------------------------------------------------------------
 
-qs::qload("output/stat_model_data.qsm")
-qs::qload("output/geometry.sqm")
-
+qs::qload("R/output/stat_model_data.qsm")
+qs::qload("R/output/geometry.qsm")
 
 # 0.3 Helper functions --------------------------------------------------------- 
 
@@ -62,7 +60,7 @@ glm_eq <- cbind(n_fin, total) ~
 
 ### 1.1.2 Run model ------------------------------------------------------------
 
-glm_binomial <- glm(glm_eq, data = data_model, family = binomial)
+glm_binomial <- glm(glm_eq, data = data_model_f, family = binomial)
 
 
 ### 1.1.3 Eval model -----------------------------------------------------------
@@ -267,12 +265,12 @@ mcmc_areas(as.matrix(brms_bym), pars = covariate_pars, prob = 0.95) +
 
 coefnames <- c("Intercept",
                "Median rent",
-               "% renters' housing stress",
-               "% average age", 
-               "% visible minorities",
-               "% one year mobility", 
-               "% dwelling in five+ stories", 
-               "% units built after 2005")
+               "Renters' housing stress (%)",
+               "Average age", 
+               "Visible minorities (%)",
+               "One year mobility (%)", 
+               "Dwelling in five+ stories (%)", 
+               "Units built after 2005 (%)")
 
 mcmcReg(list(brms_linear, brms_binomial, brms_bym),  
         pars = covariate_pars, pointest = "mean",
@@ -286,39 +284,39 @@ param_draws_linear <-
   as_draws_df() |> 
   select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
-         `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_stress,
-         `average age` = b_n_average_age, 
-         `% visible minorities` = b_p_vm,
-         `% 1 year mob.` = b_p_mobility_one_year,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
-         `% units built after 2005` = b_p_built_after_2005)
+         `Median rent` = b_n_median_rent,
+         `Renters' in stress (%)` = b_p_stress,
+         `Average age` = b_n_average_age, 
+         `Visible minorities (%)` = b_p_vm,
+         `One year mob. (%)` = b_p_mobility_one_year,
+         `Dwelling in 5+ st. (%)` = b_p_five_more_storeys,
+         `Units built after 2005 (%)` = b_p_built_after_2005)
 
 param_draws_log <- 
   brms_binomial |> 
   as_draws_df() |> 
   select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
-         `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_stress,
-         `average age` = b_n_average_age, 
-         `% visible minorities` = b_p_vm,
-         `% 1 year mob.` = b_p_mobility_one_year,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
-         `% units built after 2005` = b_p_built_after_2005)
+         `Median rent` = b_n_median_rent,
+         `Renters' in stress (%)` = b_p_stress,
+         `Average age` = b_n_average_age, 
+         `Visible minorities (%)` = b_p_vm,
+         `One year mob. (%)` = b_p_mobility_one_year,
+         `Dwelling in 5+ st. (%)` = b_p_five_more_storeys,
+         `Units built after 2005 (%)` = b_p_built_after_2005)
 
 param_draws_bym <- 
   brms_bym |> 
   as_draws_df() |> 
   select(all_of(covariate_pars)) |> 
   rename(Intercept = b_Intercept,
-         `median rent`         = b_n_median_rent,
-         `% renter stress`     = b_p_stress,
-         `average age`         = b_n_average_age, 
-         `% vis. minorities`   = b_p_vm,
-         `% 1 year mobility`   = b_p_mobility_one_year,
-         `% dwellings 5+ st.`  = b_p_five_more_storeys,
-         `% units built 2005+` = b_p_built_after_2005)
+         `Median rent` = b_n_median_rent,
+         `Renters' in stress (%)` = b_p_stress,
+         `Average age` = b_n_average_age, 
+         `Visible minorities (%)` = b_p_vm,
+         `One year mob. (%)` = b_p_mobility_one_year,
+         `Dwelling in 5+ st. (%)` = b_p_five_more_storeys,
+         `Units built after 2005 (%)` = b_p_built_after_2005)
 
 combined <- bind_rows(
   mcmc_intervals_data(param_draws_linear, prob = 0.95, prob_outer = 1),
@@ -333,23 +331,23 @@ combined <- bind_rows(
 
 ## 3.0 Save models and outputs -------------------------------------------------
 
-fileConn <- file("output/models/brms_linear.stan")
+fileConn <- file("R/output/models/brms_linear.stan")
 writeLines(brms_linear$model, fileConn)
 close(fileConn)
 
-fileConn <- file("output/models/brms_binomial.stan")
+fileConn <- file("R/output/models/brms_binomial.stan")
 writeLines(brms_binomial$model, fileConn)
 close(fileConn)
 
-fileConn <- file("output/models/brms_bym.stan")
+fileConn <- file("R/output/models/brms_bym.stan")
 writeLines(brms_bym$model, fileConn)
 close(fileConn)
 
-qsave(brms_linear, "output/models/brms_linear.qs")
-qsave(brms_binomial, "output/models/brms_binomial.qs")
-qsave(brms_bym, "output/models/brms_bym.qs", nthreads = availableCores())
+qsave(brms_linear, "R/output/models/brms_linear.qs")
+qsave(brms_binomial, "R/output/models/brms_binomial.qs")
+qsave(brms_bym, "R/output/models/brms_bym.qs", nthreads = availableCores())
 qsavem(combined, n_y_rep, pp_linear, pp_bin, pp_bym,
-       file = "output/models/extra.qsm")
+       file = "R/output/models/extra.qsm")
 
 
 ## 3.1 Clean up ----------------------------------------------------------------
