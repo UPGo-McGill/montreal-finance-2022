@@ -10,6 +10,7 @@ library(bayesplot)
 library(BayesPostEst)
 library(brms)
 library(ggridges)
+library(patchwork)
 library(scales)
 library(stats)
 library(tidybayes)
@@ -20,6 +21,7 @@ options(scipen = 999)
 # 0.2 Load data ----------------------------------------------------------------
 
 qs::qload("output/stat_model_data.qsm")
+qs::qload("output/geometry.sqm")
 
 
 # 0.3 Helper functions --------------------------------------------------------- 
