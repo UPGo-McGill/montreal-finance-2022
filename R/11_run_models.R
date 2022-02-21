@@ -19,8 +19,8 @@ options(scipen = 999)
 
 # 0.2 Load data ----------------------------------------------------------------
 
-qs::qload("R/output/stat_model_data.qsm")
-qs::qload("R/output/geometry.qsm")
+qs::qload("output/stat_model_data.qsm")
+qs::qload("output/geometry.qsm")
 
 # 0.3 Helper functions --------------------------------------------------------- 
 
@@ -301,7 +301,7 @@ param_draws_log <-
          `Renters' in stress (%)` = b_p_stress,
          `Average age` = b_n_average_age, 
          `Visible minorities (%)` = b_p_vm,
-         `One year mob. (%)` = b_p_mobility_one_year,
+         `1 year mob. (%)` = b_p_mobility_one_year,
          `Dwelling in 5+ st. (%)` = b_p_five_more_storeys,
          `Units built after 2005 (%)` = b_p_built_after_2005)
 
@@ -314,7 +314,7 @@ param_draws_bym <-
          `Renters' in stress (%)` = b_p_stress,
          `Average age` = b_n_average_age, 
          `Visible minorities (%)` = b_p_vm,
-         `One year mob. (%)` = b_p_mobility_one_year,
+         `1 year mob. (%)` = b_p_mobility_one_year,
          `Dwelling in 5+ st. (%)` = b_p_five_more_storeys,
          `Units built after 2005 (%)` = b_p_built_after_2005)
 
@@ -344,10 +344,10 @@ writeLines(brms_bym$model, fileConn)
 close(fileConn)
 
 qsave(brms_linear, "R/output/models/brms_linear.qs")
-qsave(brms_binomial, "R/output/models/brms_binomial.qs")
-qsave(brms_bym, "R/output/models/brms_bym.qs", nthreads = availableCores())
+qsave(brms_binomial, "output/models/brms_binomial.qs")
+qsave(brms_bym, "output/models/brms_bym.qs", nthreads = availableCores())
 qsavem(combined, n_y_rep, pp_linear, pp_bin, pp_bym,
-       file = "R/output/models/extra.qsm")
+       file = "output/models/extra.qsm")
 
 
 ## 3.1 Clean up ----------------------------------------------------------------
