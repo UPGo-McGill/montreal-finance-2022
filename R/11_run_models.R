@@ -331,19 +331,19 @@ combined <- bind_rows(
 
 ## 3.0 Save models and outputs -------------------------------------------------
 
-fileConn <- file("R/output/models/brms_linear.stan")
+fileConn <- file("stan/brms_linear.stan")
 writeLines(brms_linear$model, fileConn)
 close(fileConn)
 
-fileConn <- file("R/output/models/brms_binomial.stan")
+fileConn <- file("stan/models/brms_binomial.stan")
 writeLines(brms_binomial$model, fileConn)
 close(fileConn)
 
-fileConn <- file("R/output/models/brms_bym.stan")
+fileConn <- file("stan/models/brms_bym.stan")
 writeLines(brms_bym$model, fileConn)
 close(fileConn)
 
-qsave(brms_linear, "R/output/models/brms_linear.qs")
+qsave(brms_linear, "output/models/brms_linear.qs")
 qsave(brms_binomial, "output/models/brms_binomial.qs")
 qsave(brms_bym, "output/models/brms_bym.qs", nthreads = availableCores())
 qsavem(combined, n_y_rep, pp_linear, pp_bin, pp_bym,

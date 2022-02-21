@@ -89,4 +89,4 @@ caption <- "Global Moran's I coefficients for the dependent and independent mode
 print(xtable(mt_to_file,
              caption = caption,
              type = "latex"), 
-      file = "output/figures/latex/morans_variables.tex")
+      file = "latex/morans_variables.tex")
