@@ -1,0 +1,44 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{booktabs}
+
+\title{bmrs_tables_financialization}
+\author{mikael.brunila }
+\date{February 2022}
+
+\begin{document}
+% for ref: https://tex.stackexcha
+
+\begin{table}
+\begin{center}
+\begin{tabular}{l c c c}
+\hline
+ & Model 1 & Model 2 & Model 3 \\
+\hline
+Intercept                    & $0.41^{*}$        & $3.45^{*}$        & $2.47^{*}$        \\
+                             & $ [ 0.25;  0.57]$ & $ [ 3.31;  3.59]$ & $ [ 0.72;  4.20]$ \\
+Median rent                  & $0.24^{*}$        & $3.73^{*}$        & $0.37$            \\
+                             & $ [ 0.07;  0.41]$ & $ [ 3.57;  3.88]$ & $ [-1.38;  2.14]$ \\
+\% renters' housing stress   & $0.10$            & $1.01^{*}$        & $1.32$            \\
+                             & $ [-0.14;  0.34]$ & $ [ 0.81;  1.22]$ & $ [-0.54;  3.17]$ \\
+\% average age               & $0.09^{*}$        & $0.87^{*}$        & $-0.62$           \\
+                             & $ [ 0.01;  0.16]$ & $ [ 0.80;  0.94]$ & $ [-2.67;  1.51]$ \\
+\% visible minorities        & $0.31^{*}$        & $2.01^{*}$        & $3.41^{*}$        \\
+                             & $ [ 0.24;  0.39]$ & $ [ 1.96;  2.06]$ & $ [ 2.16;  4.65]$ \\
+\% one year mobility         & $-0.25^{*}$       & $-6.08^{*}$       & $-6.30^{*}$       \\
+                             & $ [-0.35; -0.14]$ & $ [-6.17; -5.99]$ & $ [-7.63; -4.97]$ \\
+\% dwelling in five+ stories & $0.08$            & $1.04^{*}$        & $0.39$            \\
+                             & $ [-0.05;  0.21]$ & $ [ 0.94;  1.13]$ & $ [-1.20;  1.98]$ \\
+\% units built after 2005    & $-0.15^{*}$       & $-1.25^{*}$       & $0.19$            \\
+                             & $ [-0.25; -0.05]$ & $ [-1.33; -1.18]$ & $ [-1.31;  1.70]$ \\
+\hline
+\multicolumn{4}{l}{\scriptsize{$^*$ Null hypothesis value outside 95\% credible interval.}}
+\end{tabular}
+\caption{Statistical models}
+\label{table:coefficients}
+\end{center}
+\end{table}
+\end{document}
