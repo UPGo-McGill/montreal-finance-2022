@@ -30,14 +30,6 @@ data_kmeans <-
   as_tibble()
 
 
-# Determine number of clusters --------------------------------------------
-
-fviz_nbclust(data_kmeans, kmeans, method = "silhouette")
-data_kmeans |>
-  clusGap(FUN = kmeans, nstart = 25, K.max = 10, B = 50) |> 
-  fviz_gap_stat()
-
-
 # Compute k means with 5 clusters -----------------------------------------
 
 k_result <- kmeans(data_kmeans, centers = 5, nstart = 25)
@@ -155,7 +147,7 @@ cluster_averages <- bind_rows(city_wide, cluster_averages)
 
 # Save cluster results ----------------------------------------------------
 
-qsavem(cluster_averages, CT_parent_vectors, k_result, 
+qsavem(cluster_averages, CT_parent_vectors, data_kmeans, k_result, 
        file = "output/cluster.qsm", nthreads = availableCores())
 
 rm(city_wide, sum_func)

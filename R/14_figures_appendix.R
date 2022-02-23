@@ -1,14 +1,119 @@
 #### 14 FIGURES FOR APPENDIX ###################################################
 
-# Load models -------------------------------------------------------------
+source("R/01_startup.R")
+qload("output/data.qsm", nthreads = availableCores())
+qload("output/geometry.qsm", nthreads = availableCores())
+qload("output/cluster.qsm", nthreads = availableCores())
+qload("output/models/extra.qsm", nthreads = availableCores())
+qload("output/stat_model_data.qsm", nthreads = availableCores())
+brms_linear <- qread("output/models/brms_linear.qs", 
+                     nthreads = availableCores())
+brms_binomial <- qread("output/models/brms_binomial.qs", 
+                       nthreads = availableCores())
+brms_bym <- qread("output/models/brms_bym.qs", nthreads = availableCores())
 
-# E.g. 
-qsave(brms_linear, "output/models/brms_linear.qs")
+library(patchwork)
+library(cluster)
+library(factoextra)
+library(bayesplot)
 
-brms_bym <- qread("output/models/brms_bym.qs")
 
+# Figure A1.  Rental unit scatterplot -------------------------------------
+
+fig_A1 <- 
+  data_CT |> 
+  ggplot(aes(renter, n_rentals)) +
+  geom_point(color = col_palette[5], size = 0.8, alpha = 0.7) +
+  scale_x_continuous(name = "Renter households (2016 census)",
+                     labels = scales::comma) +
+  scale_y_continuous(name = "Rental units (2020 PAD scrape)",
+                     labels = scales::comma) +
+  theme_minimal() +
+  theme(text = element_text(family = "Futura"),
+        plot.background = element_rect(fill = "white", colour = "transparent"))
+
+ggsave("output/figures/figure_A1.png", plot = fig_A1, width = 4.5, 
+       height = 4.5, units = "in")
+
+
+# Figure A2. Cluster diagnostics ------------------------------------------
+
+gap <- 
+  data_kmeans |>
+  clusGap(FUN = kmeans, nstart = 25, K.max = 10, B = 50)
+
+a2_1 <- 
+  gap |> 
+  fviz_gap_stat(linecolor = col_palette[5]) +
+  ggtitle("Gap statistic") +
+  theme_minimal() +
+  theme(text = element_text(family = "Futura"))
+
+a2_2 <- 
+  data_kmeans |> 
+  fviz_nbclust(kmeans, method = "silhouette", barfill = col_palette[5],
+               barcolor = col_palette[5], linecolor = col_palette[5]) +
+  ggtitle("Silhouette") +
+  theme_minimal() +
+  theme(text = element_text(family = "Futura"))
+
+a2_3 <- 
+  data_kmeans |> 
+  fviz_nbclust(kmeans, method = "wss",
+               barfill = col_palette[5],
+               barcolor = col_palette[5],
+               linecolor = col_palette[5]) +
+  geom_vline(xintercept = 5, linetype = 2, colour = col_palette[5]) +
+  ggtitle("Elbow") +
+  theme_minimal() +
+  theme(text = element_text(family = "Futura"))
+
+fig_A2 <- a2_1 + a2_2 + a2_3
+
+ggsave("output/figures/figure_A2.png", plot = fig_A2, width = 6.5, 
+       height = 3.5, units = "in")
+
+
+# Figure A3. Posterior predictions ----------------------------------------
 
 n_y_rep <- 100
+n_dens_draws <- n_y_rep
+ncols <- ncol(pp_bym)
+y_ppc_dens <- rep(data_model$p_fin, 3)
+pred_to_proportion <- function(draw_m, totals, n) t(t(draw_m[1:n,]) / totals)
+
+y_pred_ppc_dens <- cbind(
+  pp_linear[1:n_dens_draws,], 
+  pred_to_proportion(pp_bin, data_model$total, n_dens_draws), 
+  pred_to_proportion(pp_bym, data_model$total, n_dens_draws))
+
+groups_ppc_dens <- factor(cbind(rep("linear", ncols), 
+                                rep("binomial", ncols),
+                                rep("binomial-bym2", ncols)), 
+                          levels = c('linear', 'binomial', 'binomial-bym2'))
+
+fig_A3 <- 
+  ppc_dens_overlay_grouped(y = y_ppc_dens, yrep = y_pred_ppc_dens, 
+                           group = groups_ppc_dens, alpha = 0.1, size = 0.2) + 
+  geom_vline(xintercept = 0, color = "black", lty = 2, alpha = 0.5) +
+  scale_colour_manual(name = NULL, labels = c("Actual", "Predicted"),
+                      values = col_palette[c(9, 2)]) +
+  theme_minimal() +
+  theme(text = element_text(family = "Futura"),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "white", colour = "transparent"))
+
+ggsave("output/figures/figure_A3.png", plot = fig_A3, width = 6.5, 
+       height = 3.5, units = "in")
+
+
+
+
+
+
+
+
+
 
 
 
@@ -51,39 +156,6 @@ ggsave(
 
 # Density -----------------------------------------------------------------
 
-
-n_dens_draws <- n_y_rep
-ncols <- ncol(pp_bym)
-y_ppc_dens <- rep(data_model$p_fin, 3)
-
-y_pred_ppc_dens <- cbind(
-  pp_linear[1:n_dens_draws,], 
-  pred_to_proportion(pp_bin, data_model$total, n_dens_draws), 
-  pred_to_proportion(pp_bym, data_model$total, n_dens_draws))
-
-groups_ppc_dens <- factor(cbind(rep("linear", ncols), 
-                                rep("binomial", ncols),
-                                rep("binomial-bym2", ncols)), 
-                          levels = c('linear', 'binomial', 'binomial-bym2'))
-
-ppc_dens_p <- 
-  ppc_dens_overlay_grouped(y = y_ppc_dens, yrep = y_pred_ppc_dens, 
-                           group = groups_ppc_dens, alpha = 0.1, size = 0.2) + 
-  scale_colour_manual(
-    labels = c("actual", "predicted"),
-    values = c("#A80858", "#D87B91"),
-    name = "Distributions") +
-  theme_bw()
-
-ppc_dens_p$layers <- 
-  c(geom_vline(xintercept = 0, color = "black", lty = 2, alpha = 0.5), 
-    ppc_dens_p$layers)
-
-ggsave("output/figures/ppc_dens.png", 
-       plot = ppc_dens_p, 
-       width = 8, 
-       height = 5, 
-       units = "in")
 
 
 

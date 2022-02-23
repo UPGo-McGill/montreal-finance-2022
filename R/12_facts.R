@@ -45,3 +45,11 @@ data_CT |>
   as.numeric() |> 
   scales::percent(0.1)
 
+
+# Appendix facts ----------------------------------------------------------
+
+data_CT |> 
+  st_drop_geometry() |> 
+  select(renter, n_rentals) |> 
+  na.omit() |> 
+  cor()

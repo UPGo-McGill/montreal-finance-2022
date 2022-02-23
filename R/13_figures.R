@@ -102,6 +102,7 @@ p1_cor <-
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   st_drop_geometry() |> 
   select(p_stress, p_fin) |> 
+  na.omit() |> 
   cor() |> 
   as_tibble() |> 
   slice(1) |> 
@@ -131,6 +132,7 @@ p2_cor <-
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   st_drop_geometry() |> 
   select(median_rent, p_fin) |> 
+  na.omit() |> 
   cor() |> 
   as_tibble() |> 
   slice(1) |> 
@@ -161,6 +163,7 @@ p3_cor <-
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   st_drop_geometry() |> 
   select(p_mobility_one_year, p_fin) |> 
+  na.omit() |> 
   cor() |> 
   as_tibble() |> 
   slice(1) |> 
@@ -190,6 +193,7 @@ p4_cor <-
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   st_drop_geometry() |> 
   select(p_vm, p_fin) |> 
+  na.omit() |> 
   cor() |> 
   as_tibble() |> 
   slice(1) |> 
@@ -218,6 +222,7 @@ p5_cor <-
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   st_drop_geometry() |> 
   select(p_five_more_storeys, p_fin) |> 
+  na.omit() |> 
   cor() |> 
   as_tibble() |> 
   slice(1) |> 
@@ -247,6 +252,7 @@ p6_cor <-
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   st_drop_geometry() |> 
   select(p_18_24, p_fin) |> 
+  na.omit() |> 
   cor() |> 
   as_tibble() |> 
   slice(1) |> 
@@ -306,6 +312,7 @@ ggsave("output/figures/figure_3.png", plot = fig_3, width = 6.5, height = 4,
 
 fig_4_poly <-
   data_CT |> 
+  filter(!is.na(cluster)) |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
   geom_sf(aes(fill = cluster, colour = cluster), lwd = 0.3) +
@@ -363,26 +370,27 @@ ggsave("output/figures/figure_4.png", plot = fig_4, width = 8, height = 5,
 cluster_averages |> 
   select(cluster, p_fin, median_rent, asking_rent, p_stress,
          med_hh_income, avg_value, p_renter, p_condo, 
-         p_built_after_2005) |> 
+         p_built_after_2005, p_five_storeys, p_mobility_one_year, 
+         p_mobility_five_years, p_vm, p_immigrants, d_downtown, p_18_24, 
+         p_65_plus) |> 
   mutate(across(starts_with("p_"), scales::percent, 0.1),
-         across(c(median_rent, asking_rent, med_hh_income, 
-                  avg_value), scales::dollar, 1)) |> 
+         across(c(median_rent, asking_rent), scales::dollar, 10),
+         across(c(med_hh_income, avg_value), scales::dollar, 1000),
+         d_downtown = scales::comma(as.numeric(d_downtown), 0.1, 
+                                    scale = 1 / 1000, suffix = " km")) |> 
   set_names(c("Cluster", "Financialized rental units", "Median rent",
               "Average asking rent", "Renters in housing stress", 
               "After-tax median HH income", "Average dwelling value",
               "Renter households", "Condo households", 
-              "Rental units built after 2005")) |> 
-  gt::gt()
-
-# Second part
-  cluster_averages |> 
-    select(cluster, p_five_storeys, p_mobility_one_year, p_mobility_five_years,
-           p_vm, p_immigrants, d_downtown, p_18_24, p_65_plus) |> 
-  mutate(across(starts_with("p_"), scales::percent, 0.1),
-         d_downtown = round(as.numeric(d_downtown/1000), 1)) |> 
-  set_names(c("Cluster", "Households in 5+ storey buildings",
+              "Rental units built after 2005", 
+              "Households in 5+ storey buildings",
               "Households having moved in the past year",
               "Households having moved in the past 5 years",
               "Visible minorities", "Immigrants", "Distance from downtown (km)",
               "Population aged 18-24", "Population aged 65+")) |> 
+  t() |> 
+  as_tibble(rownames = "Variable") |> 
+  (\(x) set_names(x, x[1,]))() |> 
+  slice(-1) |> 
+  rename(Variable = Cluster) |> 
   gt::gt()

@@ -206,4 +206,5 @@ boroughs <-
 qsavem(boroughs, CT, CT_06, province, #streets_downtown,
        file = "output/geometry.qsm", nthreads = availableCores())
 
-rm(boroughs_raw, DA, downtown, downtown_poly, streets)
+rm(boroughs_raw, DA, downtown#, downtown_poly, streets
+)
