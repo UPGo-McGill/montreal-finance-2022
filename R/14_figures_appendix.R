@@ -16,6 +16,7 @@ library(patchwork)
 library(cluster)
 library(factoextra)
 library(bayesplot)
+fig_alpha <- 0.8
 
 
 # Figure A1.  Rental unit scatterplot -------------------------------------
@@ -64,6 +65,7 @@ a2_3 <-
                barcolor = col_palette[5],
                linecolor = col_palette[5]) +
   geom_vline(xintercept = 5, linetype = 2, colour = col_palette[5]) +
+  scale_y_continuous(labels = scales::comma) +
   ggtitle("Elbow") +
   theme_minimal() +
   theme(text = element_text(family = "Futura"))
@@ -107,59 +109,7 @@ ggsave("output/figures/figure_A3.png", plot = fig_A3, width = 6.5,
        height = 3.5, units = "in")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-# Adjacency plot ----------------------------------------------------------
-
-adjacency_plot <- 
-  data_model |> 
-  st_as_sf() |>
-  ggplot() +
-  geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(fill = 'white', color = 'grey', alpha=1) +
-  geom_sf(data = queen_adj_sf, 
-          color = "#FF6600", 
-          alpha=0.4,
-          show.legend = TRUE) +
-  scale_fill_stepsn(name= "Financialized rental units", 
-                    colors = col_palette[c(4, 1, 2, 9)],
-                    breaks = c(0.15, 0.30, 0.45, 0.60),
-                    #values = c(0.2, 0.4, 0.6),
-                    na.value = "grey80",
-                    limits = c(0, 0.75), oob = scales::squish, 
-                    labels = scales::percent) +
-  gg_bbox(boroughs) +
-  theme_void() +
-  theme(legend.position = "bottom",
-        legend.text = element_text(size = 7))
-
-adjacency_plot
-
-adjplot_fn <- "output/figures/BYM_adjacency_map"
-ggsave(
-  adjplot_fn,
-  device = "png",
-  plot = adjacency_plot)
-
-
-
-
-# Density -----------------------------------------------------------------
-
-
-
-
-# PPC ---------------------------------------------------------------------
+# Figure A4. Posterior predictions vs. actual values ----------------------
 
 n_draws_points <- n_y_rep
 counts_ppc <- rep(data_model$total, n_y_rep)
@@ -187,44 +137,52 @@ model_ppc_df <-
          Prediction = if_else(y_hat < 0, "Less than 0", "Between 0 and 1")) |> 
   rename(predicted = y_hat, actual = y)
 
-
-model_ppc_df_p <- 
+fig_A4 <- 
   model_ppc_df |> 
   ggplot(aes(x = predicted, y = actual, color = Prediction)) + 
-  geom_point(alpha = 0.5) +
+  geom_point(size = 0.8, alpha = 0.5) +
   facet_grid(cols = vars(model)) +
-  geom_hline(yintercept = 0, alpha = 0.8) +
-  geom_vline(xintercept = 0, alpha = 0.8) +
-  scale_colour_manual(labels = c("0 to 1", "Less than 0"), 
-                      values = c("#074387", "#FF6600"),
-                      name = "Predicted") + 
-  theme_bw() +
+  geom_hline(yintercept = 0, alpha = 0.7) +
+  geom_vline(xintercept = 0, alpha = 0.7) +
+  scale_colour_manual(guide = NULL, values = c("#074387", "#FF6600")) + 
   xlab("Predicted") +
-  ylab("Actual")
+  ylab("Actual") +
+  theme_minimal() +
+  theme(text = element_text(family = "Futura"),
+        plot.background = element_rect(fill = "white", colour = "transparent"))
 
-ggsave("output/figures/model_ppc.png", 
-       plot = model_ppc_df_p, 
-       width = 8, 
-       height = 5, 
-       units = "in")
-
-
-# CAR map -----------------------------------------------------------------
+ggsave("output/figures/figure_A4.png", plot = fig_A4, width = 6.5, 
+       height = 3.5, units = "in")
 
 
-library(patchwork)
-qload("output/geometry.qsm", nthreads = availableCores())
+# Figure A5. Adjacency plot -----------------------------------------------
+
+fig_A5 <-
+  data_model |> 
+  ggplot() +
+  geom_sf(data = province, colour = "transparent", fill = "grey93") +
+  geom_sf(fill = 'white', color = 'grey') +
+  geom_sf(data = queen_adj_sf, color = "#FF6600", alpha = 0.5, size = 0.3) +
+  gg_bbox(boroughs) +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "white", colour = "transparent"))
+
+ggsave("output/figures/figure_A5.png", plot = fig_A5, width = 4.5, 
+       height = 4.5, units = "in")
+
+
+# Figure A6. CAR map ------------------------------------------------------
 
 bym_rcar_variance <- 
   brms_bym |> 
-  spread_draws(rcar[1:466]) |> 
+  tidybayes::spread_draws(rcar[1:466]) |> 
   group_by(`1:466`) |> 
   summarize(variance = var(rcar))
 
 bym_rcar <- 
   brms_bym |> 
-  spread_draws(rcar[1:466]) |> 
-  mean_qi() |> 
+  tidybayes::spread_draws(rcar[1:466]) |> 
+  tidybayes::mean_qi() |> 
   left_join(bym_rcar_variance) |> 
   rename(lattice_keys = `1:466`) |> 
   arrange(desc(lattice_keys)) |> 
@@ -233,168 +191,58 @@ bym_rcar <-
 
 rcar_alpha <- 0.8
 rcar_layout <- "
-AABB
-AABB
-AABB
-AABB
-AABB
-CCCC"
+AAABB
+AAABB
+AAABB
+AAABB
+AAABB
+AAABB
+AAABB
+AAABB
+CCCCC
+"
 
-colors <- col_bin(col_palette[c(1, 4, 2, 9)], domain = NULL, bins = 11)
-col_vals <- colors(c(1,2,3,4,5,6))
+colors <- 
+  scales::col_bin(c(col_palette[c(1, 4)], "grey90", col_palette[c(2, 9)]), 
+                  domain = NULL, bins = 11)
+col_vals <- colors(1:7)
 scale_round <- function(x) sprintf("%.0f", x)
 
-rcar_map <- 
+rcar_map <-
   bym_rcar |> 
   st_as_sf() |>
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
   geom_sf(fill = 'white', color = 'grey', alpha = 1) +
-  geom_sf(aes(fill = rcar), 
-          alpha = rcar_alpha,
-          color = "transparent") +
-  scale_fill_stepsn(name= "CAR term by census tract", 
-                    colors = alpha(col_vals, 0.8),
-                    breaks = c(-4,-2, 0, 2, 4),
-                    na.value = "grey80",
-                    limits = c(-6, 6), oob = squish, 
-                    labels = scale_round) +
+  geom_sf(aes(colour = rcar, fill = after_scale(alpha(colour, fig_alpha))),
+          lwd = 0.3) +
+  scale_colour_steps2(name = "CAR term by census tract", low = col_palette[1],
+                      high = col_palette[9], mid = "grey75",
+                      breaks = c(-3, -1, 1, 3)) +
   gg_bbox(boroughs) +
   theme_void() +
-  theme(legend.position = "bottom",
+  theme(text = element_text(family = "Futura"),
+        legend.position = "bottom",
         legend.text = element_text(size = 7))
 
 rcar_hist <-
   bym_rcar |> 
-  mutate(rcar = round(rcar, 2)) |> 
-  mutate(fill = case_when(
-    rcar >= 4 ~ "6",
-    rcar >= 2 ~ "5",
-    rcar >= 0 ~ "4",
-    rcar >= -2 ~ "3",
-    rcar >= -4 ~ "2",
-    rcar >= -6 ~ "1")) |> 
-  ggplot(aes(round(rcar, 2), fill = fill, color = fill)) +
-  geom_histogram(bins = 30, alpha = rcar_alpha) +
-  scale_x_continuous(name = NULL,
-                     labels = scale_round,
-                     breaks = breaks_extended(n = 14),
-                     limits = c(-7, 7)) +
+  ggplot(aes(x = rcar, colour = after_stat(x), 
+             fill = after_scale(alpha(colour, fig_alpha)))) +
+  geom_histogram(bins = 30) +
+  scale_x_continuous(name = NULL) +
   scale_y_continuous(name = NULL) +
-  scale_fill_manual(values = col_vals, guide = NULL) +
-  scale_color_manual(values = col_vals, guide = NULL) +
-  geom_vline(xintercept = 0, color = "grey86") +
-  geom_hline(yintercept = 0, color = "grey86") +
-  theme_minimal()
+  scale_colour_steps2(name = "CAR term by census tract", low = col_palette[1],
+                      high = col_palette[9], mid = "grey75",
+                      breaks = c(-3, -1, 1, 3)) +
+  theme_minimal() +
+  theme(text = element_text(family = "Futura"),
+        legend.position = "none")
 
-rcar_fig <- rcar_map + rcar_hist + guide_area() + 
+fig_A6 <- rcar_map + rcar_hist + guide_area() + 
   theme(legend.position = "bottom") + 
   plot_layout(design = rcar_layout, guides = "collect") + 
   plot_annotation(tag_levels = "A") 
 
-ggsave("output/figures/rcar_fig.png", 
-       plot = rcar_fig, 
-       width = 8, 
-       height = 5, 
+ggsave("output/figures/figure_A6.png", plot = fig_A6, width = 6.5, height = 3.8, 
        units = "in")
-
-
-## 2.3 Posterior parameter draw ridges -----------------------------------------
-
-# Not used
-
-
-n_head <- 1000
-
-linear_draws_df <- 
-  brms_linear |> 
-  as_tibble() |> 
-  head(n_head) |> 
-  select(all_of(covariate_pars)) |> 
-  rename(Intercept = b_Intercept,
-         `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_stress,
-         `average age` = b_n_average_age, 
-         `% visible minorities` = b_p_vm,
-         `% 1 year mob.` = b_p_mobility_one_year,
-         #`% pop 18-24` = b_p_18_24,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
-         `% units built after 2005` = b_p_built_after_2005) |> 
-  gather(key = 'estimate', value = 'coefficient') |> 
-  mutate(model = 'linear')
-
-bin_draws_df <- 
-  brms_binomial |> 
-  as_tibble() |> 
-  head(n_head) |> 
-  select(all_of(covariate_pars)) |> 
-  rename(Intercept = b_Intercept,
-         `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_stress,
-         `average age` = b_n_average_age, 
-         `% visible minorities` = b_p_vm,
-         `% 1 year mob.` = b_p_mobility_one_year,
-         #`% pop 18-24` = b_p_18_24,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
-         `% units built after 2005` = b_p_built_after_2005) |> 
-  gather(key = 'estimate', value = 'coefficient') |> 
-  mutate(model = 'binomial')
-
-bym_draws_df <- 
-  brms_bym |> 
-  as_tibble() |> 
-  head(n_head) |> 
-  select(all_of(covariate_pars)) |> 
-  rename(Intercept = b_Intercept,
-         `median rent` = b_n_median_rent,
-         `% renters' in stress` = b_p_stress,
-         `average age` = b_n_average_age, 
-         `% visible minorities` = b_p_vm,
-         `% 1 year mob.` = b_p_mobility_one_year,
-         #`% pop 18-24` = b_p_18_24,
-         `% dwelling in 5+ st.` = b_p_five_more_storeys,
-         `% units built after 2005` = b_p_built_after_2005) |> 
-  gather(key = 'estimate', value = 'coefficient') |> 
-  mutate(model = 'binomial-bym2')
-
-model_draws_df <- 
-  linear_draws_df |> 
-  bind_rows(bin_draws_df, bym_draws_df) |> 
-  mutate(model = factor(model, 
-                        levels = c('linear','binomial', 'binomial-bym2'))) |> 
-  filter(estimate != "Intercept")
-
-p_density_ridges <- 
-  ggplot(model_draws_df, 
-         aes(x = coefficient, y = estimate, fill = factor(stat(quantile)))) + 
-  stat_density_ridges(
-    geom = "density_ridges_gradient",
-    calc_ecdf = TRUE,
-    quantiles = c(0.025, 0.975),
-    scale = 1) + 
-  scale_fill_manual(
-    name = "Probability", 
-    values = alpha(c("#FF6600", "#3399CC", "#FF6600"), 0.5),
-    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")) + 
-  facet_grid(cols = vars(model), scales = "free_x") +
-  geom_vline(xintercept = 0.0, color = "black", alpha = 0.8, lty = 3) + 
-  theme_bw() +
-  ylab("Estimate") +
-  xlab("Coefficient")
-
-
-
-
-
-## 2.7 Save plots --------------------------------------------------------------
-
-
-ggsave("output/figures/p_density_ridges.png", 
-       plot = p_density_ridges, 
-       width = 8, 
-       height = 5, 
-       units = "in")
-
-
-
-

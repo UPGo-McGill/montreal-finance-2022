@@ -17,22 +17,16 @@ fig_1_full <-
   data_CT |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(aes(fill = p_fin, colour = p_fin), lwd = 0.3) +
+  geom_sf(aes(colour = p_fin, fill = after_scale(alpha(colour, fig_alpha))), 
+          lwd = 0.3) +
   geom_rect(xmin = 607000, ymin = 5038000, xmax = 614000, ymax = 5045000,
             fill = NA, colour = "black", size = 0.3) +
-  scale_fill_stepsn(name = "Financialized rental units", 
-                    colors = alpha(col_palette[c(4, 1, 2, 9)], fig_alpha),
-                    breaks = c(0.15, 0.30, 0.45, 0.60),
-                    na.value = "grey80",
-                    limits = c(0, 0.75), oob = scales::squish, 
-                    labels = scales::percent) +
   scale_colour_stepsn(name= "Financialized rental units", 
                       colors = col_palette[c(4, 1, 2, 9)],
                       breaks = c(0.15, 0.30, 0.45, 0.60),
                       na.value = "grey80",
                       limits = c(0, 0.75), oob = scales::squish, 
-                      labels = scales::percent,
-                      guide = NULL) +
+                      labels = scales::percent) +
   gg_bbox(boroughs) +
   theme_void() +
   theme(text = element_text(family = "Futura"),
@@ -41,7 +35,6 @@ fig_1_full <-
 
 fig_1_inset <- 
   fig_1_full +
-  # geom_sf(data = streets_downtown, size = 0.4, colour = "grey93") +
   coord_sf(xlim = c(607000, 614000), ylim = c(5038000, 5045000),
            expand = FALSE) +
   theme(legend.position = "none",
@@ -54,23 +47,19 @@ fig_1_map <-
 
 fig_1_hist <-
   data_CT |> 
-  mutate(fill = case_when(p_fin > 0.6 ~ "4",
-                          p_fin > 0.45 ~ "3",
-                          p_fin > 0.3 ~ "2",
-                          p_fin > 0.15 ~ "1",
-                          TRUE ~ "0")) |> 
-  ggplot(aes(p_fin, fill = fill, color=fill)) +
-  geom_histogram(bins = 30, alpha=fig_alpha) +
-  scale_x_continuous(name = NULL, #"Financialized rental units",
-                     labels = scales::percent) +
+  ggplot(aes(p_fin, colour = after_stat(x), 
+             fill = after_scale(alpha(colour, fig_alpha)))) +
+  geom_histogram(bins = 30, alpha = fig_alpha) +
+  scale_x_continuous(name = NULL, labels = scales::percent) +
   scale_y_continuous(name = NULL) +
-  scale_fill_manual(values = c("#F3B45F", "#EE7A35", "#DA6D61", "#BC6591", 
-                               "#A53B6A"), guide = NULL) +
-  scale_color_manual(values = c("#F3B45F", "#EE7A35", "#DA6D61", "#BC6591", 
-                               "#A53B6A"), guide = NULL) +
-  geom_hline(yintercept = 0, color = "grey86") +
+  scale_colour_stepsn(name= "Financialized rental units", 
+                      colors = col_palette[c(4, 1, 2, 9)],
+                      breaks = c(0.15, 0.30, 0.45, 0.60),
+                      na.value = "grey80",
+                      limits = c(0, 0.75), oob = scales::squish, 
+                      labels = scales::percent) +
   theme_minimal() +
-  theme(text = element_text(family = "Futura"))
+  theme(text = element_text(family = "Futura"), legend.position = "none")
   
 
 fig_1_layout <- "
@@ -315,11 +304,10 @@ fig_4_poly <-
   filter(!is.na(cluster)) |> 
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
-  geom_sf(aes(fill = cluster, colour = cluster), lwd = 0.3) +
-  scale_fill_manual(name = NULL, values = alpha(col_palette[c(4, 3, 1, 2, 5)], 
-                    fig_alpha)) +
+  geom_sf(aes(colour = cluster, fill = after_scale(alpha(colour, fig_alpha))), 
+          lwd = 0.3) +
   scale_colour_manual(name = NULL, values = col_palette[c(4, 3, 1, 2, 5)]) +
-  guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
+  guides(colour = guide_legend(nrow = 2, byrow = TRUE)) +
   upgo::gg_bbox(data_CT) +
   theme_void() +
   theme(legend.position = "bottom", text = element_text(family = "Futura"))
@@ -332,13 +320,10 @@ fig_4_points <-
   ggplot() +
   geom_sf(data = province, colour = "transparent", fill = "grey93") +
   geom_sf(data = uef, fill = "grey85", colour = "transparent") +
-  geom_sf(aes(fill = cluster, colour = cluster), lwd = 0.05) +
-  scale_fill_manual(name = NULL, 
-                    values = alpha(col_palette[c(4, 3, 1, 2, 5)], fig_alpha),
-                    guide = NULL) +
+  geom_sf(aes(colour = cluster, fill = after_scale(alpha(colour, fig_alpha))), 
+          lwd = 0.05) +
   scale_colour_manual(name = NULL, values = col_palette[c(4, 3, 1, 2, 5)],
                       guide = NULL) +
-  # guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
   upgo::gg_bbox(data_CT) +
   theme_void() +
   theme(legend.position = "bottom", text = element_text(family = "Futura"))
