@@ -6,6 +6,25 @@ qload("output/data.qsm", nthreads = availableCores())
 qload("output/geometry.qsm", nthreads = availableCores())
 
 
+# Top 600 landlords -------------------------------------------------------
+
+# Total landlords
+length(unique(data_building$landlord_name))
+
+# Rentals controlled by top 600
+data_building |> 
+  st_drop_geometry() |> 
+  group_by(landlord_name) |> 
+  summarize(units = sum(number_rental_units, na.rm = TRUE)) |> 
+  arrange(desc(units)) |> 
+  slice(1:600) |> 
+  pull(units) |> 
+  sum()
+
+# All rentals
+sum(data_building$number_rental_units)
+
+
 # Number of financialized buildings and units -----------------------------
 
 data_building |> 
