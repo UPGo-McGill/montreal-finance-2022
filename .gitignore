@@ -4,4 +4,7 @@
 .Ruserdata
 .DS_Store
 data
-output
+output/*.qs
+output/*.qsm
+output/models/*.qs
+output/models/*.qsm
