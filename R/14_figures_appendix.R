@@ -248,38 +248,35 @@ ggsave("output/figures/figure_A6.png", plot = fig_A6, width = 6.5, height = 3.8,
        units = "in")
 
 
+# Table 1. Model results --------------------------------------------------
+
+
 
 # Table 2. Moran's I ------------------------------------------------------
 
 glm_eq <- cbind(n_fin, total) ~ n_median_rent + p_stress + n_average_age +
   p_vm + p_mobility_one_year + p_five_more_storeys + p_built_after_2005
-
 binomial_fit <- glm(glm_eq, data = data_model, family = binomial)
-
+queen_adj <- spdep::poly2nb(as(data_model, 'Spatial'))
 
 data_model |> 
-  select(-c(geometry, median_rent, p_18_24, GeoUID)) |> 
+  select(-c(geometry, log_financialized, median_rent, p_18_24, GeoUID)) |> 
   st_drop_geometry() |> 
-  mutate(binomial_res = binomial_fit$residuals) %>%
-  dplyr::select(-geometry, -log_financialized) %>%
-  map_dfr(~ Moran.I(., nb2mat(queen_adj))) %>%
-  mutate(variable = c(colnames(dplyr::select(as.tibble(data_model), 
-                                             -c(geometry, median_rent, p_18_24, log_financialized, GeoUID))), "binomial_res")) %>%
-  dplyr::select(variable, observed, expected, sd, p.value)
-
-mt_to_file <- moran_tests %>% 
+  mutate(binomial_res = binomial_fit$residuals) |> 
+  map_dfr(ape::Moran.I, spdep::nb2mat(queen_adj), .id = "variable") |> 
   filter(str_detect(variable, "p_") | 
            str_detect(variable, "^n_median") | 
            str_detect(variable, "^binomial") |
-           str_detect(variable, "^n_average")) %>%
+           str_detect(variable, "^n_average")) |> 
   mutate(variable = c("Financialized (%)", 
                       "Median rent",
-                      "Renters' housing stress (%)",
-                      "average age", 
+                      "Renters housing stress (%)",
+                      "Average age", 
                       "Visible minorities (%)",
-                      "One year mobility (%)", 
-                      "Dwelling in five+ stories (%)", 
+                      "1-year mobility (%)", 
+                      "Dwelling in 5+ stories (%)", 
                       "Units built after 2005 (%)",
-                      "Binomial residuals")) %>%
-  select(variable, observed, p.value)
-
+                      "Binomial residuals")) |> 
+  mutate(observed = paste0(scales::comma(observed, 0.01), "*")) |> 
+  select(Variable = variable, `Moran's I` = observed) |>
+  gt::gt()
