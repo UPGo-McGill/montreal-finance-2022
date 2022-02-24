@@ -17,127 +17,127 @@ reg.eq2 <- p_fin ~ p_stress + n_median_rent + p_mobility_one_year + p_vm + p_fiv
 reg.eq3 <- p_fin ~ p_stress + median_rent + p_mobility_one_year + p_vm + p_five_more_storeys + p_18_24
 reg.eq4 <- p_fin ~ ss_thirty_renter + ss_median_rent + ss_mobility_one_year + ss_vm + ss_five_more_storeys + ss_18_24
 
-reg1 <- lm(reg.eq1, data = data_model_f)
+reg1 <- lm(reg.eq1, data = data_model)
 summary(reg1)
 
-reg2 <- lm(reg.eq2, data = data_model_f)
+reg2 <- lm(reg.eq2, data = data_model)
 summary(reg2)
 
-reg3 <- lm(reg.eq3, data = data_model_f)
+reg3 <- lm(reg.eq3, data = data_model)
 summary(reg3)
 
-reg4 <- lm(reg.eq4, data = data_model_f)
+reg4 <- lm(reg.eq4, data = data_model)
 summary(reg4)
 
-data_model_f$reg1_res <- reg1$residuals
-data_model_f$reg1_fit <- reg1$fitted.values
+data_model$reg1_res <- reg1$residuals
+data_model$reg1_fit <- reg1$fitted.values
 
-data_model_f$reg2_res <- reg2$residuals
-data_model_f$reg2_fit <- reg2$fitted.values
+data_model$reg2_res <- reg2$residuals
+data_model$reg2_fit <- reg2$fitted.values
 
-data_model_f$reg3_res <- reg3$residuals
-data_model_f$reg3_fit <- reg3$fitted.values
+data_model$reg3_res <- reg3$residuals
+data_model$reg3_fit <- reg3$fitted.values
 
-data_model_f$reg4_res <- reg4$residuals
-data_model_f$reg4_fit <- reg4$fitted.values
+data_model$reg4_res <- reg4$residuals
+data_model$reg4_fit <- reg4$fitted.values
 
-sse_reg1 <- sum((data_model_f$reg1_fit - data_model_f$p_fin)^2)
+sse_reg1 <- sum((data_model$reg1_fit - data_model$p_fin)^2)
 sse_reg1
 
-sse_reg2 <- sum((data_model_f$reg2_fit - data_model_f$p_fin)^2)
+sse_reg2 <- sum((data_model$reg2_fit - data_model$p_fin)^2)
 sse_reg2
 
-sse_reg3 <- sum((data_model_f$reg3_fit - data_model_f$p_fin)^2)
+sse_reg3 <- sum((data_model$reg3_fit - data_model$p_fin)^2)
 sse_reg3
 
-sse_reg4 <- sum((data_model_f$reg4_fit - data_model_f$p_fin)^2)
+sse_reg4 <- sum((data_model$reg4_fit - data_model$p_fin)^2)
 sse_reg4
 
 # OLS Diagnostics --------------------------------------------------------------
 
 dwtest(reg1)
-shapiro.test(data_model_f$reg1_res)
+shapiro.test(data_model$reg1_res)
 ncvTest(reg1)
-qqnorm(data_model_f$reg1_res)
-qqline(data_model_f$reg1_res)
-hist(data_model_f$reg1_res)
+qqnorm(data_model$reg1_res)
+qqline(data_model$reg1_res)
+hist(data_model$reg1_res)
 
-ggplot(data_model_f, aes(reg1_fit, reg1_res)) +
+ggplot(data_model, aes(reg1_fit, reg1_res)) +
   geom_jitter(shape = 1) +
   geom_hline(yintercept = 0, color = "red") +
   ylab("Residuals") +
   xlab("Fitted")
 
-ggplot(dplyr::select(as_tibble(data_model_f), -c(geometry, GeoUID)), 
-       aes(row.names(dplyr::select(as_tibble(data_model_f), -c(geometry, GeoUID))), reg1_res)) +
+ggplot(dplyr::select(as_tibble(data_model), -c(geometry, GeoUID)), 
+       aes(row.names(dplyr::select(as_tibble(data_model), -c(geometry, GeoUID))), reg1_res)) +
   geom_point(shape = 1) +
   geom_hline(yintercept = 0, color = "red")
 
 dwtest(reg2)
-shapiro.test(data_model_f$reg2_res)
+shapiro.test(data_model$reg2_res)
 ncvTest(reg2)
-qqnorm(data_model_f$reg2_res)
-qqline(data_model_f$reg2_res)
-hist(data_model_f$reg2_res)
+qqnorm(data_model$reg2_res)
+qqline(data_model$reg2_res)
+hist(data_model$reg2_res)
 
-ggplot(data_model_f, aes(reg2_fit, reg2_res)) +
+ggplot(data_model, aes(reg2_fit, reg2_res)) +
   geom_jitter(shape = 1) +
   geom_hline(yintercept = 0, color = "red") +
   ylab("Residuals") +
   xlab("Fitted")
 
-ggplot(data_model_f, aes(row.names(data_model_f), reg2_res)) +
+ggplot(data_model, aes(row.names(data_model), reg2_res)) +
   geom_point(shape = 1) +
   geom_hline(yintercept = 0, color = "red")
 
 dwtest(reg3)
-shapiro.test(data_model_f$reg3_res)
+shapiro.test(data_model$reg3_res)
 ncvTest(reg3)
-qqnorm(data_model_f$reg3_res)
-qqline(data_model_f$reg3_res)
-hist(data_model_f$reg3_res)
+qqnorm(data_model$reg3_res)
+qqline(data_model$reg3_res)
+hist(data_model$reg3_res)
 
-ggplot(data_model_f, aes(reg3_fit, reg3_res)) +
+ggplot(data_model, aes(reg3_fit, reg3_res)) +
   geom_jitter(shape = 1) +
   geom_hline(yintercept = 0, color = "red") +
   ylab("Residuals") +
   xlab("Fitted")
 
-ggplot(data_model_f, aes(row.names(data_model_f), reg3_res)) +
+ggplot(data_model, aes(row.names(data_model), reg3_res)) +
   geom_point(shape = 1) +
   geom_hline(yintercept = 0, color = "red")
 
 dwtest(reg4)
-shapiro.test(data_model_f$reg4_res)
+shapiro.test(data_model$reg4_res)
 ncvTest(reg4)
-qqnorm(data_model_f$reg4_res)
-qqline(data_model_f$reg4_res)
-hist(data_model_f$reg4_res)
+qqnorm(data_model$reg4_res)
+qqline(data_model$reg4_res)
+hist(data_model$reg4_res)
 
-ggplot(data_model_f, aes(reg4_fit, reg4_res)) +
+ggplot(data_model, aes(reg4_fit, reg4_res)) +
   geom_jitter(shape = 1) +
   geom_hline(yintercept = 0, color = "red") +
   ylab("Residuals") +
   xlab("Fitted")
 
-ggplot(data_model_f, aes(row.names(data_model_f), reg4_res)) +
+ggplot(data_model, aes(row.names(data_model), reg4_res)) +
   geom_point(shape = 1) +
   geom_hline(yintercept = 0, color = "red")
 
 ## Loop OLS --------------------------------------------------------------------
 
-data_model_f$reg4_fit <- round(data_model_f$reg4_fit, 2)
+data_model$reg4_fit <- round(data_model$reg4_fit, 2)
 
-data_model_f_no_outliers_OLS1 <- data_model_f %>%
+data_model_no_outliers_OLS1 <- data_model %>%
   filter(reg4_fit >= 0)
 
-reg5 <- lm(reg.eq4, data = data_model_f_no_outliers_OLS1)
+reg5 <- lm(reg.eq4, data = data_model_no_outliers_OLS1)
 summary(reg5)
 
-data_model_f_no_outliers_OLS1$reg5_fit <- round(reg5$fitted.values, 2)
-sort(data_model_f_no_outliers_OLS1$reg5_fit,decreasing=F)[1:20]
+data_model_no_outliers_OLS1$reg5_fit <- round(reg5$fitted.values, 2)
+sort(data_model_no_outliers_OLS1$reg5_fit,decreasing=F)[1:20]
 
-data_model_f_no_outliers_OLS2 <- round(reg5$fitted.values, 3)
+data_model_no_outliers_OLS2 <- round(reg5$fitted.values, 3)
 
 # OLS Spatial Diagnostics ------------------------------------------------------
 
@@ -151,107 +151,107 @@ lmLMtests
 
 ## SLX -------------------------------------------------------------------------
 
-OLS_SLX <- lmSLX(reg.eq4, data = data_model_f, queen_adj_listw)
+OLS_SLX <- lmSLX(reg.eq4, data = data_model, queen_adj_listw)
 summary(OLS_SLX)
 
 imSLX <- impacts(OLS_SLX, listw=queen_adj_listw, R=500)
 imSLXSum <- summary(imSLX, zstats=TRUE)
 imSLXSum
 
-data_model_f$SLX_res <- OLS_SLX$residuals
-data_model_f$SLX_fit <- OLS_SLX$fitted.values
+data_model$SLX_res <- OLS_SLX$residuals
+data_model$SLX_fit <- OLS_SLX$fitted.values
 
-sse_slx <- sum((data_model_f$SLX_fit - data_model_f$p_fin)^2)
+sse_slx <- sum((data_model$SLX_fit - data_model$p_fin)^2)
 sse_slx
 
-plot(data_model_f$SLX_fit, data_model_f$p_fin)
+plot(data_model$SLX_fit, data_model$p_fin)
 
 ## SAR -------------------------------------------------------------------------
 
-lmSAR <- lagsarlm(reg.eq4, data = data_model_f, queen_adj_listw, Durbin = FALSE)
+lmSAR <- lagsarlm(reg.eq4, data = data_model, queen_adj_listw, Durbin = FALSE)
 summary(lmSAR)
 
 imSAR <- impacts(lmSAR, listw=queen_adj_listw,R=500)
 imSARSum <- summary(imSAR, zstats=TRUE)
 imSARSum
 
-data_model_f$SAR_res <- lmSAR$residuals
-data_model_f$SAR_fit <- lmSAR$fitted.values
+data_model$SAR_res <- lmSAR$residuals
+data_model$SAR_fit <- lmSAR$fitted.values
 
-sse_sar <- sum((data_model_f$SAR_fit - data_model_f$p_fin)^2)
+sse_sar <- sum((data_model$SAR_fit - data_model$p_fin)^2)
 sse_sar
 
-plot(data_model_f$SAR_fit, data_model_f$p_fin)
+plot(data_model$SAR_fit, data_model$p_fin)
 
 ## SLD -------------------------------------------------------------------------
 
-lmDurbin <- lagsarlm(reg.eq4, data = data_model_f, queen_adj_listw, Durbin = TRUE)
+lmDurbin <- lagsarlm(reg.eq4, data = data_model, queen_adj_listw, Durbin = TRUE)
 summary(lmDurbin)
 
 imDurbin <- impacts(lmDurbin, listw=queen_adj_listw,R=500)
 imDurbinSum <- summary(imDurbin, zstats=TRUE)
 imDurbinSum
 
-data_model_f$SLD_res <- lmDurbin$residuals
-data_model_f$SLD_fit <- lmDurbin$fitted.values
+data_model$SLD_res <- lmDurbin$residuals
+data_model$SLD_fit <- lmDurbin$fitted.values
 
-sse_sld <- sum((data_model_f$SLD_fit - data_model_f$p_fin)^2)
+sse_sld <- sum((data_model$SLD_fit - data_model$p_fin)^2)
 sse_sld
 
-plot(data_model_f$SLD_fit, data_model_f$p_fin)
+plot(data_model$SLD_fit, data_model$p_fin)
 
 ## Spatial Model Diagnostics ---------------------------------------------------
 
 ### SLX ------------------------------------------------------------------------
 
 dwtest(OLS_SLX)
-shapiro.test(data_model_f$SLX_res)
+shapiro.test(data_model$SLX_res)
 ncvTest(OLS_SLX)
-qqnorm(data_model_f$SLX_res)
-qqline(data_model_f$SLX_res)
-hist(data_model_f$SLX_res)
+qqnorm(data_model$SLX_res)
+qqline(data_model$SLX_res)
+hist(data_model$SLX_res)
 
-ggplot(data_model_f, aes(SLX_fit, SLX_res)) +
+ggplot(data_model, aes(SLX_fit, SLX_res)) +
   geom_jitter(shape = 1) +
   geom_hline(yintercept = 0, color = "red") +
   ylab("Residuals") +
   xlab("Fitted")
 
-ggplot(data_model_f, aes(row.names(data_model_f), SLX_res)) +
+ggplot(data_model, aes(row.names(data_model), SLX_res)) +
   geom_point(shape = 1) +
   geom_hline(yintercept = 0, color = "red")
 
 ### SAR ------------------------------------------------------------------------
 
-shapiro.test(data_model_f$SAR_res)
-qqnorm(data_model_f$SAR_res)
-qqline(data_model_f$SAR_res)
-hist(data_model_f$SAR_res)
+shapiro.test(data_model$SAR_res)
+qqnorm(data_model$SAR_res)
+qqline(data_model$SAR_res)
+hist(data_model$SAR_res)
 
-ggplot(data_model_f, aes(SAR_fit, SAR_res)) +
+ggplot(data_model, aes(SAR_fit, SAR_res)) +
   geom_jitter(shape = 1) +
   geom_hline(yintercept = 0, color = "red") +
   ylab("Residuals") +
   xlab("Fitted")
 
-ggplot(data_model_f, aes(row.names(data_model_f), SAR_res)) +
+ggplot(data_model, aes(row.names(data_model), SAR_res)) +
   geom_point(shape = 1) +
   geom_hline(yintercept = 0, color = "red")
 
 ### SLD ------------------------------------------------------------------------
 
-shapiro.test(data_model_f$SLD_res)
-qqnorm(data_model_f$SLD_res)
-qqline(data_model_f$SLD_res)
-hist(data_model_f$SLD_res)
+shapiro.test(data_model$SLD_res)
+qqnorm(data_model$SLD_res)
+qqline(data_model$SLD_res)
+hist(data_model$SLD_res)
 
-ggplot(data_model_f, aes(SLD_fit, SLD_res)) +
+ggplot(data_model, aes(SLD_fit, SLD_res)) +
   geom_jitter(shape = 1) +
   geom_hline(yintercept = 0, color = "red") +
   ylab("Residuals") +
   xlab("Fitted")
 
-ggplot(data_model_f, aes(row.names(data_model_f), SLD_res)) +
+ggplot(data_model, aes(row.names(data_model), SLD_res)) +
   geom_point(shape = 1) +
   geom_hline(yintercept = 0, color = "red")
 
