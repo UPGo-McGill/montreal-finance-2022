@@ -246,3 +246,40 @@ fig_A6 <- rcar_map + rcar_hist + guide_area() +
 
 ggsave("output/figures/figure_A6.png", plot = fig_A6, width = 6.5, height = 3.8, 
        units = "in")
+
+
+
+# Table 2. Moran's I ------------------------------------------------------
+
+glm_eq <- cbind(n_fin, total) ~ n_median_rent + p_stress + n_average_age +
+  p_vm + p_mobility_one_year + p_five_more_storeys + p_built_after_2005
+
+binomial_fit <- glm(glm_eq, data = data_model, family = binomial)
+
+
+data_model |> 
+  select(-c(geometry, median_rent, p_18_24, GeoUID)) |> 
+  st_drop_geometry() |> 
+  mutate(binomial_res = binomial_fit$residuals) %>%
+  dplyr::select(-geometry, -log_financialized) %>%
+  map_dfr(~ Moran.I(., nb2mat(queen_adj))) %>%
+  mutate(variable = c(colnames(dplyr::select(as.tibble(data_model), 
+                                             -c(geometry, median_rent, p_18_24, log_financialized, GeoUID))), "binomial_res")) %>%
+  dplyr::select(variable, observed, expected, sd, p.value)
+
+mt_to_file <- moran_tests %>% 
+  filter(str_detect(variable, "p_") | 
+           str_detect(variable, "^n_median") | 
+           str_detect(variable, "^binomial") |
+           str_detect(variable, "^n_average")) %>%
+  mutate(variable = c("Financialized (%)", 
+                      "Median rent",
+                      "Renters' housing stress (%)",
+                      "average age", 
+                      "Visible minorities (%)",
+                      "One year mobility (%)", 
+                      "Dwelling in five+ stories (%)", 
+                      "Units built after 2005 (%)",
+                      "Binomial residuals")) %>%
+  select(variable, observed, p.value)
+

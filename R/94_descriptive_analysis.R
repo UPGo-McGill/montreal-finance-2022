@@ -1,8 +1,11 @@
+#### ADDITIONAL MODEL ANALYSIS #################################################
+
 # Load libraries ---------------------------------------------------------------
+
+source("R/01_startup.R")
 
 library(ape)
 library(spdep)
-library(tidyverse)
 library(xtable)
 
 # Load data --------------------------------------------------------------------
@@ -11,7 +14,7 @@ qs::qload("output/stat_model_data.qsm")
 
 # Exploratory Univariate Diagnostics -------------------------------------------
 
-ggplot(gather(dplyr::select(as_tibble(data_model_f), 
+ggplot(gather(dplyr::select(as_tibble(data_model), 
                             -geometry, 
                             -total, 
                             -n_fin,
@@ -19,7 +22,7 @@ ggplot(gather(dplyr::select(as_tibble(data_model_f),
   geom_histogram(bins = 10) + 
   facet_wrap(~key, scales = 'free_x')
 
-data_model_f %>%
+data_model %>%
   as.tibble() %>%
   dplyr::select(-geometry, -GeoUID) %>%
   gather(-p_fin, key = "var", value = "value") %>% 
@@ -27,7 +30,7 @@ data_model_f %>%
   geom_point() +
   facet_wrap(~ var, scales = "free")
 
-data_model_f %>%
+data_model %>%
   as_tibble() %>%
   dplyr::select(-geometry, -GeoUID) %>%
   gather(-log_financialized, key = "var", value = "value") %>% 
@@ -53,18 +56,30 @@ binomial_eq <- cbind(n_fin, total) ~ p_stress +
   n_average_age +
   p_built_after_2005
 
-OLS_fit <- lm(OLS_eq, data = data_model_f)
+glm_eq <- cbind(n_fin, total) ~ 
+  n_median_rent + 
+  p_stress + 
+  n_average_age +
+  p_vm + 
+  p_mobility_one_year + 
+  p_five_more_storeys + 
+  p_built_after_2005
+
+
+OLS_fit <- lm(OLS_eq, data = data_model)
 binomial_fit <- glm(glm_eq,
-                    data = data_model_f, 
+                    data = data_model, 
                     family = binomial)
 
-moran_tests <- data_model_f %>%
+queen_adj <- poly2nb(as(data_model, 'Spatial'))
+
+moran_tests <- data_model %>%
   dplyr::select(-c(geometry, median_rent, p_18_24, GeoUID)) %>%
   as.tibble()%>%
   mutate(binomial_res = binomial_fit$residuals) %>%
   dplyr::select(-geometry, -log_financialized) %>%
   map_dfr(~ Moran.I(., nb2mat(queen_adj))) %>%
-  mutate(variable = c(colnames(dplyr::select(as.tibble(data_model_f), 
+  mutate(variable = c(colnames(dplyr::select(as.tibble(data_model), 
                                            -c(geometry, median_rent, p_18_24, log_financialized, GeoUID))), "binomial_res")) %>%
   dplyr::select(variable, observed, expected, sd, p.value)
 
