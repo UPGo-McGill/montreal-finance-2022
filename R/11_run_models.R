@@ -257,23 +257,8 @@ mcmc_areas(as.matrix(brms_bym), pars = covariate_pars, prob = 0.95) +
 
 # 2. Compare Models ------------------------------------------------------------
 
-## 2.1 Output parameter estimates to LATEX -------------------------------------
 
-coefnames <- c("Intercept",
-               "Median rent",
-               "Renter housing stress (%)",
-               "Average age", 
-               "Visible minorities (%)",
-               "One year mobility (%)", 
-               "Dwellings in 5+ stories (%)", 
-               "Units built after 2005 (%)")
-
-mcmcReg(list(brms_linear, brms_binomial, brms_bym),  
-        pars = covariate_pars, pointest = "mean",
-        coefnames = list(coefnames, coefnames, coefnames))
-
-
-## 2.2 Posterior parameter draws -----------------------------------------------
+## 2.1 Posterior parameter draws -----------------------------------------------
 
 param_draws_linear <- 
   brms_linear |> 
@@ -323,9 +308,9 @@ combined <- bind_rows(
   filter(parameter != 'Intercept')
 
 
-# 3.0 Finalize -----------------------------------------------------------------
+# 3. Finalize ------------------------------------------------------------------
 
-## 3.0 Save models and outputs -------------------------------------------------
+## 3.1 Save models and outputs -------------------------------------------------
 
 fileConn <- file("stan/brms_linear.stan")
 writeLines(brms_linear$model, fileConn)
@@ -345,7 +330,7 @@ qsave(brms_bym, "output/models/brms_bym.qs", nthreads = availableCores())
 qsavem(combined, pp_linear, pp_bin, pp_bym, file = "output/models/extra.qsm")
 
 
-## 3.1 Clean up ----------------------------------------------------------------
+## 3.2 Clean up ----------------------------------------------------------------
 
 rm(get_sse, plot_fit, pred_to_proportion, glm_eq, ndraws, warmup, iterations, 
    seed, chains, cores, inits, save_m_pars, covariate_pars, brms_linear_eq,

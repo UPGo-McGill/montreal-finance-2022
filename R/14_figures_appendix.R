@@ -250,6 +250,27 @@ ggsave("output/figures/figure_A6.png", plot = fig_A6, width = 6.5, height = 3.8,
 
 # Table 1. Model results --------------------------------------------------
 
+covariate_pars <- c("b_Intercept",
+                    "b_n_median_rent", 
+                    "b_p_stress",
+                    "b_n_average_age",
+                    "b_p_vm",
+                    "b_p_mobility_one_year",
+                    "b_p_five_more_storeys",
+                    "b_p_built_after_2005")
+
+coefnames <- c("Intercept",
+               "Median rent",
+               "Renter housing stress (%)",
+               "Average age", 
+               "Visible minorities (%)",
+               "One year mobility (%)", 
+               "Dwellings in 5+ stories (%)", 
+               "Units built after 2005 (%)")
+
+mcmcReg(list(brms_linear, brms_binomial, brms_bym),  
+        pars = covariate_pars, pointest = "mean",
+        coefnames = list(coefnames, coefnames, coefnames))
 
 
 # Table 2. Moran's I ------------------------------------------------------
