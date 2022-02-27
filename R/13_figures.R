@@ -351,7 +351,6 @@ ggsave("output/figures/figure_4.png", plot = fig_4, width = 8, height = 5,
 
 # Table 1. Cluster analysis table -----------------------------------------
 
-# First part
 cluster_averages |> 
   select(cluster, p_fin, median_rent, asking_rent, p_stress,
          med_hh_income, avg_value, p_renter, p_condo, 
