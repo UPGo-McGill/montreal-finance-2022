@@ -8,3 +8,4 @@ output/*.qs
 output/*.qsm
 output/models/*.qs
 output/models/*.qsm
+output/models/*.rds
