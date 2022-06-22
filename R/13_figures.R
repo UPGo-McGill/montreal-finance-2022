@@ -13,6 +13,8 @@ fig_alpha <- 0.8
 
 # Figure 1. Percentage of financialized ownership -------------------------
 
+gini <- round(ineq::ineq(data_CT$n_fin, type = "Gini"), 2)
+
 fig_1_full <- 
   data_CT |> 
   ggplot() +
@@ -29,7 +31,8 @@ fig_1_full <-
                       labels = scales::percent) +
   gg_bbox(boroughs) +
   theme_void() +
-  theme(text = element_text(family = "Futura"),
+  theme(
+    #text = element_text(family = "Futura"),
         legend.position = "bottom",
         legend.text = element_text(size = 7))
 
@@ -59,7 +62,9 @@ fig_1_hist <-
                       limits = c(0, 0.75), oob = scales::squish, 
                       labels = scales::percent) +
   theme_minimal() +
-  theme(text = element_text(family = "Futura"), legend.position = "none")
+  theme(
+    #text = element_text(family = "Futura"), 
+    legend.position = "none")
   
 
 fig_1_layout <- "
@@ -75,13 +80,14 @@ CCCCC
 "
 
 fig_1 <- fig_1_map + fig_1_hist + guide_area() + 
-  theme(legend.position = "bottom", text = element_text(family = "Futura")) + 
+  theme(legend.position = "bottom", 
+        #text = element_text(family = "Futura")
+  ) + 
   plot_layout(design = fig_1_layout, guides = "collect") + 
   plot_annotation(tag_levels = "A") 
 
 ggsave("output/figures/figure_1.png", plot = fig_1, width = 6.5, height = 3.8, 
        units = "in")
-
 
 # Figure 2. Bivariate regressions -----------------------------------------
 
