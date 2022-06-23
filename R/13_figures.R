@@ -8,12 +8,13 @@ qload("output/models/extra.qsm", nthreads = availableCores())
 
 library(patchwork)
 library(ggpubr)
+library(ineq)
 fig_alpha <- 0.8
 
 
 # Figure 1. Percentage of financialized ownership -------------------------
 
-gini <- round(ineq::ineq(data_CT$n_fin, type = "Gini"), 2)
+gini <- round(ineq(data_CT$n_fin, type = "Gini"), 2)
 
 fig_1_full <- 
   data_CT |> 
@@ -31,8 +32,7 @@ fig_1_full <-
                       labels = scales::percent) +
   gg_bbox(boroughs) +
   theme_void() +
-  theme(
-    #text = element_text(family = "Futura"),
+  theme(text = element_text(family = "Futura"),
         legend.position = "bottom",
         legend.text = element_text(size = 7))
 
@@ -81,8 +81,7 @@ CCCCC
 
 fig_1 <- fig_1_map + fig_1_hist + guide_area() + 
   theme(legend.position = "bottom", 
-        #text = element_text(family = "Futura")
-  ) + 
+        text = element_text(family = "Futura")) + 
   plot_layout(design = fig_1_layout, guides = "collect") + 
   plot_annotation(tag_levels = "A") 
 
@@ -137,6 +136,7 @@ p2 <-
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   filter(median_rent > 500, median_rent < 1800) |> 
+  #mutate(median_rent = log(median_rent)) |> 
   ggplot(aes(median_rent, p_fin, 
              size = parent_renter, alpha = parent_renter)) +
   geom_point(color = col_palette[2]) +
