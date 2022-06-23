@@ -61,9 +61,10 @@ fig_1_hist <-
                       na.value = "grey80",
                       limits = c(0, 0.75), oob = scales::squish, 
                       labels = scales::percent) +
+  annotate("text", x = 0.7, y = 182, label = paste0("Gini coefficient: ", gini), size = 2.75)+
   theme_minimal() +
   theme(
-    #text = element_text(family = "Futura"), 
+    text = element_text(family = "Futura"), 
     legend.position = "none")
   
 
