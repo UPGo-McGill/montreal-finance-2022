@@ -271,7 +271,36 @@ p6 <-
   theme_minimal() + 
   theme(text = element_text(family = "Futura", size = 6.5))
 
-fig_2 <- p1 + p2 + p3 + p4 + p5 + p6
+# Percentage built after 2005
+p7_cor <- 
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  st_drop_geometry() |> 
+  select(p_built_after_2005, p_fin) |> 
+  na.omit() |> 
+  cor() |> 
+  as_tibble() |> 
+  slice(1) |> 
+  pull(p_fin)
+
+p7 <-
+  data_CT |> 
+  left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
+  ggplot(aes(p_built_after_2005,
+             p_fin, alpha = parent_renter, size = parent_renter)) +
+  geom_point(color = "#3a8c00") +
+  geom_line(stat = "smooth", method = "lm", color = "black", alpha = p7_cor) +
+  stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
+           family = "Futura", size = 2.5) +
+  scale_x_continuous(name = "Units built after 2005", label = scales::percent) +
+  scale_y_continuous("Financialized rental units", label = scales::percent, 
+                     limits = c(0, 1)) +
+  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
+  scale_alpha_continuous(guide = "none") +
+  theme_minimal() + 
+  theme(text = element_text(family = "Futura", size = 6.5))
+
+fig_2 <- p1 + p2 + p3 + p4 + p5 + p6 + p7
 
 ggsave("output/figures/figure_2.png", plot = fig_2, width = 6.5, 
        height = 4.5, units = "in")
