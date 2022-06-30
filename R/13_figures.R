@@ -24,7 +24,7 @@ fig_1_full <-
           lwd = 0.3) +
   geom_rect(xmin = 607000, ymin = 5038000, xmax = 614000, ymax = 5045000,
             fill = NA, colour = "black", size = 0.3) +
-  scale_colour_stepsn(name= "Financialized rental units", 
+  scale_colour_stepsn(name = "Financialized rental units", 
                       colors = col_palette[c(4, 1, 2, 9)],
                       breaks = c(0.15, 0.30, 0.45, 0.60),
                       na.value = "grey80",
@@ -55,17 +55,16 @@ fig_1_hist <-
   geom_histogram(bins = 30, alpha = fig_alpha) +
   scale_x_continuous(name = NULL, labels = scales::percent) +
   scale_y_continuous(name = NULL) +
-  scale_colour_stepsn(name= "Financialized rental units", 
+  scale_colour_stepsn(name = "Financialized rental units", 
                       colors = col_palette[c(4, 1, 2, 9)],
                       breaks = c(0.15, 0.30, 0.45, 0.60),
                       na.value = "grey80",
                       limits = c(0, 0.75), oob = scales::squish, 
                       labels = scales::percent) +
-  annotate("text", x = 0.7, y = 182, label = paste0("Gini coefficient: ", gini), size = 2.75)+
+  annotate("text", x = 0.7, y = 182, label = paste0("Gini coefficient: ", gini), 
+           family = "Futura", size = 2.75) +
   theme_minimal() +
-  theme(
-    text = element_text(family = "Futura"), 
-    legend.position = "none")
+  theme(text = element_text(family = "Futura"), legend.position = "none")
   
 
 fig_1_layout <- "
