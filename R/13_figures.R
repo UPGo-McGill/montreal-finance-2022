@@ -88,7 +88,10 @@ fig_1 <- fig_1_map + fig_1_hist + guide_area() +
 ggsave("output/figures/figure_1.png", plot = fig_1, width = 6.5, height = 3.8, 
        units = "in")
 
+
 # Figure 2. Bivariate regressions -----------------------------------------
+
+size_range <- c(0.2, 2)
 
 # Housing stress
 p1_cor <- 
@@ -107,7 +110,7 @@ p1 <-
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   ggplot(aes(p_stress, p_fin, 
              size = parent_renter, alpha = parent_renter)) +
-  geom_point(color = col_palette[1]) +
+  geom_point(color = col_palette[1], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p1_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
            family = "Futura", size = 2.5) +
@@ -115,7 +118,7 @@ p1 <-
                      label = scales::percent) +
   scale_y_continuous("Financialized rental units", label = scales::percent, 
                      limits = c(0, 1)) +
-  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
+  scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
   theme(text = element_text(family = "Futura", size = 6.5))
@@ -139,7 +142,7 @@ p2 <-
   #mutate(median_rent = log(median_rent)) |> 
   ggplot(aes(median_rent, p_fin, 
              size = parent_renter, alpha = parent_renter)) +
-  geom_point(color = col_palette[2]) +
+  geom_point(color = col_palette[2], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p2_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 500, label.y = 0.875,
            family = "Futura", size = 2.5) +
@@ -147,7 +150,7 @@ p2 <-
                      limits = c(500, NA)) +
   scale_y_continuous("Financialized rental units", label = scales::percent, 
                      limits = c(0, 1)) +
-  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
+  scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
   theme(text = element_text(family = "Futura", size = 6.5))
@@ -169,7 +172,7 @@ p3 <-
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   ggplot(aes(p_mobility_one_year, p_fin, size = parent_renter, 
              alpha = parent_renter)) +
-  geom_point(color = col_palette[3]) +
+  geom_point(color = col_palette[3], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p3_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
            family = "Futura", size = 2.5) +
@@ -177,7 +180,7 @@ p3 <-
                      label = scales::percent) +
   scale_y_continuous("Financialized rental units", label = scales::percent, 
                      limits = c(0, 1)) +
-  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
+  scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
   theme(text = element_text(family = "Futura", size = 6.5))
@@ -198,14 +201,14 @@ p4 <-
   data_CT |> 
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   ggplot(aes(p_vm, p_fin, alpha = dwellings, size = dwellings)) +
-  geom_point(color = col_palette[5]) +
+  geom_point(color = col_palette[5], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p4_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
            family = "Futura", size = 2.5) +
   scale_x_continuous(name = "Visible minorities", label = scales::percent) +
   scale_y_continuous("Financialized rental units", label = scales::percent, 
                      limits = c(0, 1)) +
-  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
+  scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
   theme(text = element_text(family = "Futura", size = 6.5))
@@ -228,7 +231,7 @@ p5 <-
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   ggplot(aes(p_five_more_storeys, 
              p_fin, alpha = parent_renter, size = parent_renter)) +
-  geom_point(color = col_palette[7]) +
+  geom_point(color = col_palette[7], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p5_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
            family = "Futura", size = 2.5) +
@@ -236,7 +239,7 @@ p5 <-
                      label = scales::percent) +
   scale_y_continuous("Financialized rental units", label = scales::percent, 
                      limits = c(0, 1)) +
-  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
+  scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
   theme(text = element_text(family = "Futura", size = 6.5))
@@ -258,14 +261,14 @@ p6 <-
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   ggplot(aes(p_18_24,
              p_fin, alpha = parent_renter, size = parent_renter)) +
-  geom_point(color = col_palette[9]) +
+  geom_point(color = col_palette[9], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p6_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
            family = "Futura", size = 2.5) +
   scale_x_continuous(name = "Population aged 18-24", label = scales::percent) +
   scale_y_continuous("Financialized rental units", label = scales::percent, 
                      limits = c(0, 1)) +
-  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
+  scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
   theme(text = element_text(family = "Futura", size = 6.5))
@@ -287,14 +290,14 @@ p7 <-
   left_join(st_drop_geometry(CT_parent_vectors), by = "GeoUID") |> 
   ggplot(aes(p_built_after_2005,
              p_fin, alpha = parent_renter, size = parent_renter)) +
-  geom_point(color = "#3a8c00") +
+  geom_point(color = "#3a8c00", stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p7_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
            family = "Futura", size = 2.5) +
   scale_x_continuous(name = "Units built after 2005", label = scales::percent) +
   scale_y_continuous("Financialized rental units", label = scales::percent, 
                      limits = c(0, 1)) +
-  scale_size_continuous(range = c(0.3, 1.5), guide = "none") +
+  scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
   theme(text = element_text(family = "Futura", size = 6.5))
@@ -302,7 +305,7 @@ p7 <-
 fig_2 <- p1 + p2 + p3 + p4 + p5 + p6 + p7
 
 ggsave("output/figures/figure_2.png", plot = fig_2, width = 6.5, 
-       height = 4.5, units = "in")
+       height = 7.5, units = "in")
 
 
 # Figure 3. Credible intervals --------------------------------------------
