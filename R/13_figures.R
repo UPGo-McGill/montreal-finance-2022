@@ -9,6 +9,7 @@ qload("output/models/extra.qsm", nthreads = availableCores())
 library(patchwork)
 library(ggpubr)
 library(ineq)
+library(ggspatial)
 fig_alpha <- 0.8
 
 
@@ -24,22 +25,43 @@ fig_1_full <-
           lwd = 0.3) +
   geom_rect(xmin = 607000, ymin = 5038000, xmax = 614000, ymax = 5045000,
             fill = NA, colour = "black", size = 0.3) +
-  scale_colour_stepsn(name = "Financialized rental units", 
+  scale_colour_stepsn(name = "Financialized rental ownership", 
                       colors = col_palette[c(4, 1, 2, 9)],
                       breaks = c(0.15, 0.30, 0.45, 0.60),
                       na.value = "grey80",
                       limits = c(0, 0.75), oob = scales::squish, 
                       labels = scales::percent) +
   gg_bbox(boroughs) +
+  annotation_scale(location = "bl",
+                   width_hint = 0.15,
+                   pad_x = unit(0.25, "cm"),
+                   pad_y = unit(0.25, "cm")) +
+  annotation_north_arrow(location = "br", height = unit(0.75, "cm"), width = unit(0.75, "cm"),
+                         pad_x = unit(0.25, "cm"),
+                         pad_y = unit(0.25, "cm"),
+                         style = north_arrow_orienteering)+
   theme_void() +
   theme(text = element_text(family = "Futura"),
         legend.position = "bottom",
         legend.text = element_text(size = 7))
 
 fig_1_inset <- 
-  fig_1_full +
+  data_CT |> 
+  ggplot() +
+  geom_sf(data = province, colour = "transparent", fill = "grey93") +
+  geom_sf(aes(colour = p_fin, fill = after_scale(alpha(colour, fig_alpha))), 
+          lwd = 0.3) +
+  geom_rect(xmin = 607000, ymin = 5038000, xmax = 614000, ymax = 5045000,
+            fill = NA, colour = "black", size = 0.3) +
+  scale_colour_stepsn(name = "Financialized rental ownership", 
+                      colors = col_palette[c(4, 1, 2, 9)],
+                      breaks = c(0.15, 0.30, 0.45, 0.60),
+                      na.value = "grey80",
+                      limits = c(0, 0.75), oob = scales::squish, 
+                      labels = scales::percent) +
   coord_sf(xlim = c(607000, 614000), ylim = c(5038000, 5045000),
            expand = FALSE) +
+  theme_void() +
   theme(legend.position = "none",
         panel.border = element_rect(fill = NA, colour = "black", size = 0.6))
 
@@ -55,14 +77,14 @@ fig_1_hist <-
   geom_histogram(bins = 30, alpha = fig_alpha) +
   scale_x_continuous(name = NULL, labels = scales::percent) +
   scale_y_continuous(name = NULL) +
-  scale_colour_stepsn(name = "Financialized rental units", 
+  scale_colour_stepsn(name = "Financialized rental ownership", 
                       colors = col_palette[c(4, 1, 2, 9)],
                       breaks = c(0.15, 0.30, 0.45, 0.60),
                       na.value = "grey80",
                       limits = c(0, 0.75), oob = scales::squish, 
                       labels = scales::percent) +
   annotate("text", x = 0.7, y = 182, label = paste0("Gini coefficient: ", gini), 
-           family = "Futura", size = 2.75) +
+           family = "Futura", size = 2.9) +
   theme_minimal() +
   theme(text = element_text(family = "Futura"), legend.position = "none")
   
@@ -85,7 +107,7 @@ fig_1 <- fig_1_map + fig_1_hist + guide_area() +
   plot_layout(design = fig_1_layout, guides = "collect") + 
   plot_annotation(tag_levels = "A") 
 
-ggsave("output/figures/figure_1.png", plot = fig_1, width = 6.5, height = 3.8, 
+ggsave("output/figures/figure_1.png", plot = fig_1, width = 6.5, height = 3.8, dpi = 700,
        units = "in")
 
 
@@ -113,15 +135,15 @@ p1 <-
   geom_point(color = col_palette[1], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p1_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
-           family = "Futura", size = 2.5) +
+           family = "Futura", size = 3) +
   scale_x_continuous(name = "Renters in housing stress", 
                      label = scales::percent) +
-  scale_y_continuous("Financialized rental units", label = scales::percent, 
+  scale_y_continuous("Financialized rental ownership", label = scales::percent, 
                      limits = c(0, 1)) +
   scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
-  theme(text = element_text(family = "Futura", size = 6.5))
+  theme(text = element_text(family = "Futura", size = 9))
 
 # Median rent
 p2_cor <- 
@@ -145,15 +167,15 @@ p2 <-
   geom_point(color = col_palette[2], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p2_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 500, label.y = 0.875,
-           family = "Futura", size = 2.5) +
+           family = "Futura", size = 3) +
   scale_x_continuous(name = "Median rent", label = scales::dollar,
                      limits = c(500, NA)) +
-  scale_y_continuous("Financialized rental units", label = scales::percent, 
+  scale_y_continuous("Financialized rental ownership", label = scales::percent, 
                      limits = c(0, 1)) +
   scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
-  theme(text = element_text(family = "Futura", size = 6.5))
+  theme(text = element_text(family = "Futura", size = 9))
 
 # One-year mobility
 p3_cor <- 
@@ -175,15 +197,15 @@ p3 <-
   geom_point(color = col_palette[3], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p3_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
-           family = "Futura", size = 2.5) +
-  scale_x_continuous(name = "Households having moved in the past year",
+           family = "Futura", size = 3) +
+  scale_x_continuous(name = "Households having moved \nin the past year",
                      label = scales::percent) +
-  scale_y_continuous("Financialized rental units", label = scales::percent, 
+  scale_y_continuous("Financialized rental ownership", label = scales::percent, 
                      limits = c(0, 1)) +
   scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
-  theme(text = element_text(family = "Futura", size = 6.5))
+  theme(text = element_text(family = "Futura", size = 9))
 
 # Visible minorities
 p4_cor <- 
@@ -204,14 +226,14 @@ p4 <-
   geom_point(color = col_palette[5], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p4_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
-           family = "Futura", size = 2.5) +
+           family = "Futura", size = 3) +
   scale_x_continuous(name = "Visible minorities", label = scales::percent) +
-  scale_y_continuous("Financialized rental units", label = scales::percent, 
+  scale_y_continuous("Financialized rental ownership", label = scales::percent, 
                      limits = c(0, 1)) +
   scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
-  theme(text = element_text(family = "Futura", size = 6.5))
+  theme(text = element_text(family = "Futura", size = 9))
 
 
 # Five+ stories
@@ -234,15 +256,15 @@ p5 <-
   geom_point(color = col_palette[7], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p5_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
-           family = "Futura", size = 2.5) +
+           family = "Futura", size = 3) +
   scale_x_continuous(name = "Households in 5+ storey buildings", 
                      label = scales::percent) +
-  scale_y_continuous("Financialized rental units", label = scales::percent, 
+  scale_y_continuous("Financialized rental ownership", label = scales::percent, 
                      limits = c(0, 1)) +
   scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
-  theme(text = element_text(family = "Futura", size = 6.5))
+  theme(text = element_text(family = "Futura", size = 9))
 
 # 18-24 year olds
 p6_cor <- 
@@ -264,14 +286,14 @@ p6 <-
   geom_point(color = col_palette[9], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p6_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
-           family = "Futura", size = 2.5) +
+           family = "Futura", size = 3) +
   scale_x_continuous(name = "Population aged 18-24", label = scales::percent) +
-  scale_y_continuous("Financialized rental units", label = scales::percent, 
+  scale_y_continuous("Financialized rental ownership", label = scales::percent, 
                      limits = c(0, 1)) +
   scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
-  theme(text = element_text(family = "Futura", size = 6.5))
+  theme(text = element_text(family = "Futura", size = 9))
 
 # Percentage built after 2005
 p7_cor <- 
@@ -293,18 +315,18 @@ p7 <-
   geom_point(color = "#3a8c00", stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p7_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
-           family = "Futura", size = 2.5) +
+           family = "Futura", size = 3) +
   scale_x_continuous(name = "Units built after 2005", label = scales::percent) +
-  scale_y_continuous("Financialized rental units", label = scales::percent, 
+  scale_y_continuous("Financialized rental ownership", label = scales::percent, 
                      limits = c(0, 1)) +
   scale_size_continuous(range = size_range, guide = "none") +
   scale_alpha_continuous(guide = "none") +
   theme_minimal() + 
-  theme(text = element_text(family = "Futura", size = 6.5))
+  theme(text = element_text(family = "Futura", size = 9))
 
 fig_2 <- p1 + p2 + p3 + p4 + p5 + p6 + p7
 
-ggsave("output/figures/figure_2.png", plot = fig_2, width = 6.5, 
+ggsave("output/figures/figure_2.png", plot = fig_2, width = 6.5, dpi = 700,
        height = 7.5, units = "in")
 
 
@@ -331,7 +353,7 @@ fig_3 <-
   theme(legend.position = "right", text = element_text(family = "Futura"),
         plot.background = element_rect(fill = "white", colour = "transparent"))
 
-ggsave("output/figures/figure_3.png", plot = fig_3, width = 6.5, height = 4, 
+ggsave("output/figures/figure_3.png", plot = fig_3, width = 6.5, height = 4, dpi = 700,
        units = "in")
 
 
@@ -345,10 +367,18 @@ fig_4_poly <-
   geom_sf(aes(colour = cluster, fill = after_scale(alpha(colour, fig_alpha))), 
           lwd = 0.3) +
   scale_colour_manual(name = NULL, values = col_palette[c(4, 3, 1, 2, 5)]) +
-  guides(colour = guide_legend(nrow = 2, byrow = TRUE)) +
+  guides(colour = guide_legend(nrow = 3, byrow = TRUE)) +
   upgo::gg_bbox(data_CT) +
+  annotation_scale(location = "bl",
+                   width_hint = 0.15,
+                   pad_x = unit(0.25, "cm"),
+                   pad_y = unit(0.25, "cm")) +
+  annotation_north_arrow(location = "br", height = unit(0.75, "cm"), width = unit(0.75, "cm"),
+                         pad_x = unit(0.25, "cm"),
+                         pad_y = unit(0.25, "cm"),
+                         style = north_arrow_orienteering)+
   theme_void() +
-  theme(legend.position = "bottom", text = element_text(family = "Futura"))
+  theme(legend.position = "bottom", text = element_text(family = "Futura", size = 9))
 
 fig_4_points <- 
   data_building |> 
@@ -363,19 +393,27 @@ fig_4_points <-
   scale_colour_manual(name = NULL, values = col_palette[c(4, 3, 1, 2, 5)],
                       guide = NULL) +
   upgo::gg_bbox(data_CT) +
+  annotation_scale(location = "bl",
+                   width_hint = 0.15,
+                   pad_x = unit(0.25, "cm"),
+                   pad_y = unit(0.25, "cm")) +
+  annotation_north_arrow(location = "br", height = unit(0.75, "cm"), width = unit(0.75, "cm"),
+                         pad_x = unit(0.25, "cm"),
+                         pad_y = unit(0.25, "cm"),
+                         style = north_arrow_orienteering)+
   theme_void() +
-  theme(legend.position = "bottom", text = element_text(family = "Futura"))
+  theme(legend.position = "bottom", text = element_text(family = "Futura", size = 9))
 
 fig_4_layout <- "
-AABB
-AABB
-AABB
-AABB
-AABB
-AABB
-AABB
-AABB
-CCCC
+AAAAAAAA
+AAAAAAAA
+AAAAAAAA
+AAAAAAAA
+BBBBBBBB
+BBBBBBBB
+BBBBBBBB
+BBBBBBBB
+CCCCCCCC
 "
 
 fig_4 <- fig_4_poly + fig_4_points + guide_area() + 
@@ -383,7 +421,7 @@ fig_4 <- fig_4_poly + fig_4_points + guide_area() +
   plot_annotation(tag_levels = "A") +
   theme(legend.position = "bottom", text = element_text(family = "Futura"))
 
-ggsave("output/figures/figure_4.png", plot = fig_4, width = 8, height = 5, 
+ggsave("output/figures/figure_4.png", plot = fig_4, width = 5, height = 8, dpi = 700,
        units = "in")
 
 

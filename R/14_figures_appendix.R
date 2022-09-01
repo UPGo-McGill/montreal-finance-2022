@@ -33,7 +33,7 @@ fig_A1 <-
   theme(text = element_text(family = "Futura"),
         plot.background = element_rect(fill = "white", colour = "transparent"))
 
-ggsave("output/figures/figure_A1.png", plot = fig_A1, width = 4.5, 
+ggsave("output/figures/figure_A1.png", plot = fig_A1, width = 4.5, dpi = 700,
        height = 4.5, units = "in")
 
 
@@ -72,7 +72,7 @@ a2_3 <-
 
 fig_A2 <- a2_1 + a2_2 + a2_3
 
-ggsave("output/figures/figure_A2.png", plot = fig_A2, width = 6.5, 
+ggsave("output/figures/figure_A2.png", plot = fig_A2, width = 6.5, dpi = 700,
        height = 3.5, units = "in")
 
 
@@ -105,7 +105,7 @@ fig_A3 <-
         legend.position = "bottom",
         plot.background = element_rect(fill = "white", colour = "transparent"))
 
-ggsave("output/figures/figure_A3.png", plot = fig_A3, width = 6.5, 
+ggsave("output/figures/figure_A3.png", plot = fig_A3, width = 6.5, dpi = 700, 
        height = 3.5, units = "in")
 
 
@@ -151,7 +151,7 @@ fig_A4 <-
   theme(text = element_text(family = "Futura"),
         plot.background = element_rect(fill = "white", colour = "transparent"))
 
-ggsave("output/figures/figure_A4.png", plot = fig_A4, width = 6.5, 
+ggsave("output/figures/figure_A4.png", plot = fig_A4, width = 6.5, dpi = 700,
        height = 3.5, units = "in")
 
 
@@ -167,7 +167,7 @@ fig_A5 <-
   theme_void() +
   theme(plot.background = element_rect(fill = "white", colour = "transparent"))
 
-ggsave("output/figures/figure_A5.png", plot = fig_A5, width = 4.5, 
+ggsave("output/figures/figure_A5.png", plot = fig_A5, width = 4.5, dpi = 700,
        height = 4.5, units = "in")
 
 
@@ -244,7 +244,7 @@ fig_A6 <- rcar_map + rcar_hist + guide_area() +
   plot_layout(design = rcar_layout, guides = "collect") + 
   plot_annotation(tag_levels = "A") 
 
-ggsave("output/figures/figure_A6.png", plot = fig_A6, width = 6.5, height = 3.8, 
+ggsave("output/figures/figure_A6.png", plot = fig_A6, width = 6.5, height = 3.8, dpi = 700,
        units = "in")
 
 
