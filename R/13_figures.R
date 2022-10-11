@@ -135,6 +135,7 @@ p1 <-
   geom_point(color = col_palette[1], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p1_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
+           cor.coef.name = "rho",
            family = "Futura", size = 3) +
   scale_x_continuous(name = "Renters in housing stress", 
                      label = scales::percent) +
@@ -167,6 +168,7 @@ p2 <-
   geom_point(color = col_palette[2], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p2_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 500, label.y = 0.875,
+           cor.coef.name = "rho",
            family = "Futura", size = 3) +
   scale_x_continuous(name = "Median rent", label = scales::dollar,
                      limits = c(500, NA)) +
@@ -197,6 +199,7 @@ p3 <-
   geom_point(color = col_palette[3], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p3_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
+           cor.coef.name = "rho",
            family = "Futura", size = 3) +
   scale_x_continuous(name = "Households having moved \nin the past year",
                      label = scales::percent) +
@@ -226,6 +229,7 @@ p4 <-
   geom_point(color = col_palette[5], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p4_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
+           cor.coef.name = "rho",
            family = "Futura", size = 3) +
   scale_x_continuous(name = "Visible minorities", label = scales::percent) +
   scale_y_continuous("Financialized rental ownership", label = scales::percent, 
@@ -256,6 +260,7 @@ p5 <-
   geom_point(color = col_palette[7], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p5_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
+           cor.coef.name = "rho",
            family = "Futura", size = 3) +
   scale_x_continuous(name = "Households in 5+ storey buildings", 
                      label = scales::percent) +
@@ -286,6 +291,7 @@ p6 <-
   geom_point(color = col_palette[9], stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p6_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
+           cor.coef.name = "rho",
            family = "Futura", size = 3) +
   scale_x_continuous(name = "Population aged 18-24", label = scales::percent) +
   scale_y_continuous("Financialized rental ownership", label = scales::percent, 
@@ -315,6 +321,7 @@ p7 <-
   geom_point(color = "#3a8c00", stroke = 0) +
   geom_line(stat = "smooth", method = "lm", color = "black", alpha = p7_cor) +
   stat_cor(aes(label = ..r.label..), label.x = 0, label.y = 0.875,
+           cor.coef.name = "rho",
            family = "Futura", size = 3) +
   scale_x_continuous(name = "Units built after 2005", label = scales::percent) +
   scale_y_continuous("Financialized rental ownership", label = scales::percent, 
