@@ -11,6 +11,7 @@ suppressPackageStartupMessages({
   library(tidyr)
   library(future)
   library(qs)
+  library(rvest)
 })
 
 
